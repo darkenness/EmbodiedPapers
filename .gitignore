@@ -1,0 +1,22 @@
+# Local runtime/state
+.omx/
+tmp/
+.trash/
+
+# Obsidian local workspace state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Tool/cache output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.tmp
+*.bak
+*.swp
+*.log

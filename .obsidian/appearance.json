@@ -1,0 +1,9 @@
+{
+  "accentColor": "",
+  "cssTheme": "Border",
+  "theme": "moonstone",
+  "enabledCssSnippets": [
+    "heading",
+    "dataview"
+  ]
+}
