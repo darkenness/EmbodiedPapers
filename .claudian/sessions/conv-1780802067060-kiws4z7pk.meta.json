@@ -1,0 +1,23 @@
+{
+  "id": "conv-1780802067060-kiws4z7pk",
+  "providerId": "claude",
+  "title": "帮我翻译成中文",
+  "titleGenerationStatus": "failed",
+  "createdAt": 1780802067060,
+  "updatedAt": 1780803080547,
+  "lastResponseAt": 1780803080547,
+  "sessionId": "cad084f5-a8d7-4a38-81ab-f4e93903e8aa",
+  "providerState": {
+    "providerSessionId": "cad084f5-a8d7-4a38-81ab-f4e93903e8aa"
+  },
+  "usage": {
+    "model": "opus",
+    "inputTokens": 26311,
+    "cacheCreationInputTokens": 0,
+    "cacheReadInputTokens": 26585,
+    "contextWindow": 200000,
+    "contextTokens": 52896,
+    "percentage": 26,
+    "contextWindowIsAuthoritative": true
+  }
+}

@@ -1,9 +1,11 @@
 {
   "accentColor": "",
-  "cssTheme": "Primary",
+  "cssTheme": "Typewriter",
   "theme": "moonstone",
   "enabledCssSnippets": [
     "heading",
     "dataview"
-  ]
+  ],
+  "textFontFamily": "霞鹜文楷",
+  "monospaceFontFamily": "Times New Roman"
 }
