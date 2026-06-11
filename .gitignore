@@ -12,6 +12,9 @@ tmp/
 Thumbs.db
 desktop.ini
 
+# Nested independent repos (own .git; not tracked by this repo)
+Embodied-AI-Daily/
+
 # Tool/cache output
 __pycache__/
 *.py[cod]
