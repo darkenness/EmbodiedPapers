@@ -15,6 +15,7 @@ desktop.ini
 # Nested independent repos (own .git; not tracked by this repo)
 Embodied-AI-Daily/
 robotics_arXiv_daily/
+ITact/
 
 # Tool/cache output
 __pycache__/
