@@ -17,7 +17,7 @@ published_url: "https://doi.org/10.34133/cbsystems.0231"
 arxiv: "2408.00638v1"
 pdf_url: "https://arxiv.org/pdf/2408.00638v1"
 pdf: "[[papers/pdfs/2408.00638v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2408.00638v1/"
 image_index: "[[papers/images/2408.00638v1/index.md]]"
 authors:
@@ -42,7 +42,7 @@ topics:
 # CrystalTac: Vision-Based Tactile Sensor Family Fabricated via Rapid Monolithic Manufacturing
 
 - [x] PDF:: [[papers/pdfs/2408.00638v1.pdf]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2408.00638v1/index.md]]
 - [ ] 阅读状态:: unread
 

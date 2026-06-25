@@ -22,7 +22,7 @@ code: "https://github.com/Physical-Intelligence/openpi"
 published: 2026-04-16
 updated: 2026-04-24
 pdf: "[[papers/pdfs/2604.15483v2.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2604.15483v2/index.md]]"
 authors:
   - "[[Physical Intelligence]]"
@@ -63,7 +63,7 @@ topics:
 - [x] 项目页:: [π0.7](https://www.pi.website/blog/pi07)
 - [x] 代码:: [Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
 - [x] 图片索引:: [[papers/images/2604.15483v2/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[compositional generalization]], [[cross-embodiment transfer]], [[visual subgoals]], [[@physicalintelligence2024pi0]], [[@physicalintelligence2025pi05]], [[@tang2026frs]], [[@kim2026serf]], [[@wang2026covla]], [[@tencent2026hy-embodied-05]]

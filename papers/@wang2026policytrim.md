@@ -21,7 +21,7 @@ huggingface: "https://huggingface.co/INCEPTIONwang/PolicyTrim"
 published: 2026-06-21
 updated: 2026-06-21
 pdf: "[[papers/pdfs/2606.22540v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.22540v1/index.md]]"
 authors:
   - "[[Xianghui Wang]]"
@@ -57,7 +57,7 @@ topics:
 - [x] 代码:: [PolicyTrim](https://github.com/INCEPTIONwang/PolicyTrim)
 - [x] 项目页:: [PolicyTrim](https://inceptionwang.github.io/PolicyTrim/)
 - [x] 图片索引:: [[papers/images/2606.22540v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[action chunking]], [[reinforcement learning]], [[GRPO]], [[LIBERO]], [[ManiSkill]], [[Meta-World]], [[OpenVLA]], [[@physicalintelligence2024pi0]], [[@physicalintelligence2025pi05]], [[@guo2026fafm]], [[@tang2026frs]], [[@kuzucu2026parcel]]

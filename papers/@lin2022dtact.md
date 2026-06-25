@@ -17,7 +17,7 @@ published_url: "https://doi.org/10.1109/ICRA48891.2023.10160796"
 arxiv: "2209.13916v1"
 project: "https://sites.google.com/view/dtact-sensor"
 pdf: "[[papers/pdfs/2209.13916v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2209.13916v1/"
 image_index: "[[papers/images/2209.13916v1/index.md]]"
 authors:
@@ -39,7 +39,7 @@ topics:
 # DTact: A Vision-Based Tactile Sensor that Measures High-Resolution 3D Geometry Directly from Darkness
 
 - [x] PDF:: [[papers/pdfs/2209.13916v1.pdf]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2209.13916v1/index.md]]
 - [ ] 阅读状态:: reading
 

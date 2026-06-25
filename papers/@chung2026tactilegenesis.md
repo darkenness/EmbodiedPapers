@@ -19,7 +19,7 @@ project: "https://neuroagents-lab.github.io/tactile-genesis/"
 published: 2026-06-21
 updated: 2026-06-21
 pdf: "[[papers/pdfs/2606.22332v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.22332v1/index.md]]"
 authors:
   - "[[Trinity Chung]]"
@@ -52,7 +52,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2606.22332v1.pdf]]
 - [x] 项目页:: [Tactile Genesis](https://neuroagents-lab.github.io/tactile-genesis/)
 - [x] 图片索引:: [[papers/images/2606.22332v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[tactile sensing]], [[dexterous manipulation]], [[sim-to-real]], [[vision-based tactile sensor]], [[Genesis World]], [[@yuan2017gelsight]], [[@li2025vbts-classification-review]], [[@zhang2026contactworld]], [[@niu2026trex]], [[@wang2024large-scale-vbts]]

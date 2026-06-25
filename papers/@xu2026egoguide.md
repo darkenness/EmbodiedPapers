@@ -22,7 +22,7 @@ project: "https://silicx.github.io/EgoGuide/"
 published: 2026-06-12
 updated: 2026-06-12
 pdf: "[[papers/pdfs/2606.14665v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2606.14665v1/"
 image_index: "[[papers/images/2606.14665v1/index.md]]"
 authors:
@@ -56,7 +56,7 @@ topics:
 - [x] 项目页:: [EgoGuide](https://silicx.github.io/EgoGuide/)
 - [ ] 代码:: 项目页当前显示 Code Coming Later
 - [ ] 装配指南:: 项目页当前显示 Assembly Guide Coming Later
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2606.14665v1/index.md]]
 - [ ] 阅读状态:: unread
 

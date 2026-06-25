@@ -21,7 +21,7 @@ code: "https://anonymous.4open.science/r/FAFM"
 published: 2026-06-18
 updated: 2026-06-18
 pdf: "[[papers/pdfs/2606.20135v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.20135v1/index.md]]"
 authors:
   - "[[Jianing Guo]]"
@@ -65,7 +65,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2606.20135v1.pdf]]
 - [x] 代码:: [FAFM (anonymous)](https://anonymous.4open.science/r/FAFM)
 - [x] 图片索引:: [[papers/images/2606.20135v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[flow matching]], [[vision-language-action]], [[action chunking]], [[LIBERO]], [[Open X-Embodiment]], [[@physicalintelligence2024pi0]], [[@tang2026frs]], [[@physicalintelligence2025pi05]], [[@niu2026trex]]

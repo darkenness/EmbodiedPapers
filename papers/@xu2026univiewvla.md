@@ -18,7 +18,7 @@ pdf_url: "https://arxiv.org/pdf/2606.21501v1"
 published: 2026-06-19
 updated: 2026-06-19
 pdf: "[[papers/pdfs/2606.21501v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.21501v1/index.md]]"
 authors:
   - "[[Tao Xu]]"
@@ -54,7 +54,7 @@ topics:
 
 - [x] PDF:: [[papers/pdfs/2606.21501v1.pdf]]
 - [x] 图片索引:: [[papers/images/2606.21501v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[world modeling]], [[multiview perception]], [[occlusion]], [[UniVLA]], [[LIBERO]], [[CALVIN]], [[@kim2026serf]], [[@xu2026egoguide]], [[@chen2026mvwam]], [[@kuzucu2026parcel]], [[@physicalintelligence2024pi0]]

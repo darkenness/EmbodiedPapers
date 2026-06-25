@@ -20,7 +20,7 @@ code: "https://github.com/X-Square-Robot/wall-x"
 published: 2026-06-01
 updated: 2026-06-01
 pdf: "[[papers/pdfs/2606.01955v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2606.01955v1/"
 image_index: "[[papers/images/2606.01955v1/index.md]]"
 authors:
@@ -76,7 +76,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2606.01955v1.pdf]]
 - [x] 代码:: [wall-x](https://github.com/X-Square-Robot/wall-x)
 - [x] 图片索引:: [[papers/images/2606.01955v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[world action model]], [[vision-language-action]], [[event-grounded learning]], [[@yang2026memorywam]], [[@chen2026mvwam]], [[@xu2026univiewvla]], [[@physicalintelligence2024pi0]], [[@tencent2026hy-embodied-05]], [[@kim2026serf]]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check paper map coverage, structure, and bilingual markers."""
+"""Check paper map coverage, structure, and reading-draft markers."""
 
 from __future__ import annotations
 
@@ -13,11 +13,11 @@ LINK_RE = re.compile(r"\[\[([^\]#|]+)(?:#[^\]|]*)?(?:\|([^\]]*))?\]\]")
 HEADING_RE = re.compile(r"^## (.+)$", re.MULTILINE)
 QUICK_INDEX_LINE_RE = re.compile(r"^- (#map/[^\s]+) :: (.+)$")
 REQUIRED_SECTIONS = {"快速索引"}
-OPTIONAL_SECTIONS = {"双语稿状态"}
+OPTIONAL_SECTIONS = {"精读稿状态"}
 ALLOWED_SECTIONS = REQUIRED_SECTIONS | OPTIONAL_SECTIONS
 FORBIDDEN_SECTIONS = {"研究域书架"}
-BILINGUAL_MARKER = "⌛"
-BILINGUAL_FIELD_RE = re.compile(r"^bilingual:[ \t]*(.*)$", re.MULTILINE)
+READING_MARKER = "⌛"
+READING_FIELD_RE = re.compile(r"^reading:[ \t]*(.*)$", re.MULTILINE)
 WIKI_LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 
 
@@ -29,9 +29,9 @@ def main() -> int:
         help="paper map path relative to the vault root",
     )
     parser.add_argument(
-        "--sync-bilingual-markers",
+        "--sync-reading-markers",
         action="store_true",
-        help="sync ⌛ markers in the quick index with each paper's bilingual field",
+        help="sync ⌛ markers in the quick index with each paper's reading field",
     )
     args = parser.parse_args()
 
@@ -49,16 +49,16 @@ def main() -> int:
 
     papers = {path.stem: path for path in paper_dir.glob("@*.md")}
     map_text = map_path.read_text(encoding="utf-8")
-    bilingual_status = {
-        stem: has_bilingual_note(path, root) for stem, path in papers.items()
+    reading_status = {
+        stem: has_reading_note(path, root) for stem, path in papers.items()
     }
 
-    if args.sync_bilingual_markers:
-        synced_text, changed = sync_bilingual_markers(map_text, bilingual_status)
+    if args.sync_reading_markers:
+        synced_text, changed = sync_reading_markers(map_text, reading_status)
         if changed:
             map_path.write_text(synced_text, encoding="utf-8")
             map_text = synced_text
-            print("Synced bilingual markers in paper map quick index.")
+            print("Synced reading markers in paper map quick index.")
 
     linked = {
         normalize_link(match.group(1))
@@ -69,11 +69,11 @@ def main() -> int:
     missing = sorted(set(papers) - linked_papers)
     stale = sorted(linked_papers - set(papers))
     structure_errors = check_map_structure(map_text)
-    marker_errors = check_bilingual_markers(map_text, bilingual_status)
+    marker_errors = check_reading_markers(map_text, reading_status)
 
-    with_bilingual = sum(1 for value in bilingual_status.values() if value)
-    without_bilingual = sorted(
-        stem for stem, value in bilingual_status.items() if not value
+    with_reading = sum(1 for value in reading_status.values() if value)
+    without_reading = sorted(
+        stem for stem, value in reading_status.items() if not value
     )
 
     if structure_errors:
@@ -82,7 +82,7 @@ def main() -> int:
             print(f"  - {message}")
 
     if marker_errors:
-        print("Bilingual marker errors:")
+        print("Reading marker errors:")
         for message in marker_errors:
             print(f"  - {message}")
 
@@ -97,12 +97,12 @@ def main() -> int:
             print(f"  - {name}")
 
     print(
-        f"Bilingual coverage: {with_bilingual}/{len(papers)} linked; "
-        f"{len(without_bilingual)} pending."
+        f"Reading coverage: {with_reading}/{len(papers)} linked; "
+        f"{len(without_reading)} pending."
     )
-    if without_bilingual:
-        print("Pending bilingual drafts:")
-        for name in without_bilingual:
+    if without_reading:
+        print("Pending reading drafts:")
+        for name in without_reading:
             print(f"  - {papers[name].relative_to(root).as_posix()}")
 
     if structure_errors or marker_errors or missing or stale:
@@ -135,7 +135,7 @@ def check_map_structure(map_text: str) -> list[str]:
     return errors
 
 
-def check_bilingual_markers(map_text: str, bilingual_status: dict[str, bool]) -> list[str]:
+def check_reading_markers(map_text: str, reading_status: dict[str, bool]) -> list[str]:
     errors: list[str] = []
     quick_index = extract_quick_index_section(map_text)
 
@@ -145,24 +145,24 @@ def check_bilingual_markers(map_text: str, bilingual_status: dict[str, bool]) ->
         for citekey, display in parse_quick_index_links(line):
             if not citekey.startswith("@"):
                 continue
-            if citekey not in bilingual_status:
+            if citekey not in reading_status:
                 continue
             marked = display_has_marker(display)
-            has_bilingual = bilingual_status[citekey]
-            if not has_bilingual and not marked:
+            has_reading = reading_status[citekey]
+            if not has_reading and not marked:
                 errors.append(
-                    f"{citekey} is missing bilingual link; "
-                    f'quick index display should start with "{BILINGUAL_MARKER} "'
+                    f"{citekey} is missing reading link; "
+                    f'quick index display should start with "{READING_MARKER} "'
                 )
-            if has_bilingual and marked:
+            if has_reading and marked:
                 errors.append(
-                    f"{citekey} already has bilingual link; "
-                    f'remove "{BILINGUAL_MARKER} " from quick index display'
+                    f"{citekey} already has reading link; "
+                    f'remove "{READING_MARKER} " from quick index display'
                 )
     return errors
 
 
-def sync_bilingual_markers(map_text: str, bilingual_status: dict[str, bool]) -> tuple[str, bool]:
+def sync_reading_markers(map_text: str, reading_status: dict[str, bool]) -> tuple[str, bool]:
     lines = map_text.splitlines()
     changed = False
     in_quick_index = False
@@ -174,7 +174,7 @@ def sync_bilingual_markers(map_text: str, bilingual_status: dict[str, bool]) -> 
         if not in_quick_index or not line.strip().startswith("- #map/"):
             continue
 
-        new_line, line_changed = sync_quick_index_line(line, bilingual_status)
+        new_line, line_changed = sync_quick_index_line(line, reading_status)
         if line_changed:
             lines[index] = new_line
             changed = True
@@ -182,7 +182,7 @@ def sync_bilingual_markers(map_text: str, bilingual_status: dict[str, bool]) -> 
     return "\n".join(lines) + ("\n" if map_text.endswith("\n") else ""), changed
 
 
-def sync_quick_index_line(line: str, bilingual_status: dict[str, bool]) -> tuple[str, bool]:
+def sync_quick_index_line(line: str, reading_status: dict[str, bool]) -> tuple[str, bool]:
     match = QUICK_INDEX_LINE_RE.match(line)
     if not match:
         return line, False
@@ -199,7 +199,7 @@ def sync_quick_index_line(line: str, bilingual_status: dict[str, bool]) -> tuple
             return link_match.group(0)
 
         current_display = display if display is not None else citekey
-        new_display = apply_marker(current_display, bilingual_status.get(citekey, False))
+        new_display = apply_marker(current_display, reading_status.get(citekey, False))
         if new_display != current_display:
             changed = True
         if display is None and new_display == citekey:
@@ -239,9 +239,9 @@ def extract_quick_index_section(map_text: str) -> str:
     return "\n".join(collected)
 
 
-def has_bilingual_note(paper_path: Path, root: Path) -> bool:
+def has_reading_note(paper_path: Path, root: Path) -> bool:
     text = paper_path.read_text(encoding="utf-8")
-    match = BILINGUAL_FIELD_RE.search(text)
+    match = READING_FIELD_RE.search(text)
     if not match:
         return False
 
@@ -267,17 +267,17 @@ def display_has_marker(display: str) -> bool:
 
 def strip_marker(display: str) -> str:
     value = display.strip()
-    prefix = f"{BILINGUAL_MARKER} "
+    prefix = f"{READING_MARKER} "
     if value.startswith(prefix):
         return value[len(prefix) :]
     return value
 
 
-def apply_marker(display: str, has_bilingual: bool) -> str:
+def apply_marker(display: str, has_reading: bool) -> str:
     label = strip_marker(display)
-    if has_bilingual:
+    if has_reading:
         return label
-    return f"{BILINGUAL_MARKER} {label}"
+    return f"{READING_MARKER} {label}"
 
 
 def normalize_link(link: str) -> str:

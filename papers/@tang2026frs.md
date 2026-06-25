@@ -18,7 +18,7 @@ arxiv_doi: "10.48550/arXiv.2606.13675"
 pdf_url: "https://arxiv.org/pdf/2606.13675v1"
 project: "https://flow-reversal-steering.github.io"
 pdf: "[[papers/pdfs/2606.13675v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2606.13675v1/"
 image_index: "[[papers/images/2606.13675v1/index.md]]"
 authors:
@@ -46,7 +46,7 @@ topics:
 # Improving Robotic Generalist Policies via Flow Reversal Steering
 
 - [x] PDF:: [[papers/pdfs/2606.13675v1.pdf]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2606.13675v1/index.md]]
 - [ ] 阅读状态:: unread
 

@@ -18,7 +18,7 @@ pdf_url: "https://arxiv.org/pdf/2606.21088v1"
 published: 2026-06-19
 updated: 2026-06-19
 pdf: "[[papers/pdfs/2606.21088v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.21088v1/index.md]]"
 authors:
   - "[[Jintao Chen]]"
@@ -59,7 +59,7 @@ topics:
 
 - [x] PDF:: [[papers/pdfs/2606.21088v1.pdf]]
 - [x] 图片索引:: [[papers/images/2606.21088v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[world action model]], [[flow matching]], [[mixture-of-transformers]], [[RoboTwin]], [[@yang2026memorywam]], [[@zhang2026contactworld]], [[@physicalintelligence2024pi0]], [[@tencent2026hy-embodied-05]], [[@kim2026serf]]

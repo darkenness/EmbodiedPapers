@@ -18,7 +18,7 @@ pdf_url: "https://arxiv.org/pdf/2606.26095v1"
 published: 2026-06-24
 updated: 2026-06-24
 pdf: "[[papers/pdfs/2606.26095v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.26095v1/index.md]]"
 authors:
   - "[[Dong Jing]]"
@@ -52,7 +52,7 @@ topics:
 
 - [x] PDF:: [[papers/pdfs/2606.26095v1.pdf]]
 - [x] 图片索引:: [[papers/images/2606.26095v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[action prior]], [[cross-embodiment]], [[flow matching]], [[latent distillation]], [[LIBERO]], [[RoboCasa]], [[@physicalintelligence2025pi05]], [[@wang2026covla]], [[@xu2026univiewvla]], [[@shi2026flowdpg]], [[@tang2026frs]]

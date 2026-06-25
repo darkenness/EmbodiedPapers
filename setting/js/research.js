@@ -58,9 +58,9 @@ class Research {
     this.renderPaperTable(dv, papers);
   }
 
-  missingBilingual(dv) {
+  missingReading(dv) {
     const papers = this.paperPages(dv)
-      .where(page => !page.bilingual)
+      .where(page => !this.hasReadingLink(page))
       .sort(page => page.file.mtime, "desc");
 
     dv.table(
@@ -70,6 +70,61 @@ class Research {
         this.formatField(page.pdf),
         this.date(page.file.mtime),
       ])
+    );
+  }
+
+  paperMapReadingStatus(dv) {
+    const content = String(dv.current()?.file?.content ?? "");
+    const axes = this.parseQuickIndexAxes(content);
+    const papers = this.paperPages(dv)
+      .where(page => String(page.file?.name ?? "").startsWith("@"));
+    const rows = papers.array ? papers.array() : Array.from(papers);
+    const byName = new Map(rows.map(page => [page.file.name, page]));
+    const pending = rows.filter(page => !this.hasReadingLink(page));
+    const completed = rows.length - pending.length;
+
+    dv.header(2, "精读稿覆盖");
+    dv.paragraph(
+      `已链接 ${completed}/${rows.length} 篇；待写 ${pending.length} 篇。快速索引中 \`⌛\` 表示待整理精读稿。`
+    );
+
+    const grouped = axes
+      .map(([axis, citekeys]) => {
+        const axisPending = citekeys
+          .map(name => byName.get(name))
+          .filter(page => page && !this.hasReadingLink(page));
+        return [axis, axisPending];
+      })
+      .filter(([, axisPending]) => axisPending.length > 0);
+
+    if (grouped.length > 0) {
+      dv.header(3, "按线索分类的待写清单");
+      for (const [axis, axisPending] of grouped) {
+        dv.paragraph(`**${axis}**`);
+        dv.list(
+          axisPending.map(page =>
+            dv.fileLink(page.file.path, false, page.aliases?.[0] ?? page.title ?? page.file.name)
+          )
+        );
+      }
+    }
+
+    if (pending.length === 0) {
+      dv.paragraph("全部文献笔记都已链接精读稿。");
+      return;
+    }
+
+    dv.header(3, "全部待写");
+    dv.table(
+      ["Paper", "Year", "PDF", "Updated"],
+      pending
+        .sort((left, right) => (right.year ?? 0) - (left.year ?? 0))
+        .map(page => [
+          this.paperTitle(dv, page),
+          page.year ?? "",
+          this.formatField(page.pdf),
+          this.date(page.file.mtime),
+        ])
     );
   }
 
@@ -129,14 +184,14 @@ class Research {
     }
 
     dv.table(
-      ["Paper", "Year", "Authors", "Venue", "PDF", "Bilingual", "Images", "Status", "Updated"],
+      ["Paper", "Year", "Authors", "Venue", "PDF", "精读稿", "Images", "Status", "Updated"],
       rows.map(page => [
         this.paperTitle(dv, page),
         page.year ?? "",
         this.truncateList(page.authors ?? page.author),
         page.venue ?? page.container ?? page.publication ?? "",
         this.formatField(page.pdf),
-        this.formatField(page.bilingual),
+        this.formatField(page.reading),
         this.formatField(page.image_index ?? page.images),
         page.status ?? "",
         this.date(page.file.mtime),
@@ -312,5 +367,32 @@ class Research {
       .replace(/#.*$/, "")
       .replace(/\.md$/, "");
     return value.split("/").at(-1) ?? "";
+  }
+
+  hasReadingLink(page) {
+    return this.hasValue(page.reading);
+  }
+
+  parseQuickIndexAxes(content) {
+    const axes = [];
+    let inQuickIndex = false;
+
+    for (const line of content.split(/\r?\n/)) {
+      if (line.startsWith("## ")) {
+        inQuickIndex = line.trim() === "## 快速索引";
+        continue;
+      }
+      if (!inQuickIndex) continue;
+
+      const match = line.match(/^- (#map\/\S+) :: (.+)$/);
+      if (!match) continue;
+
+      const citekeys = [...match[2].matchAll(/\[\[(@[^\]#|]+)/g)].map(item =>
+        item[1].split("/").at(-1)
+      );
+      axes.push([match[1], citekeys]);
+    }
+
+    return axes;
   }
 }

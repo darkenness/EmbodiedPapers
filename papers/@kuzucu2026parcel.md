@@ -20,7 +20,7 @@ arxiv_doi: "10.48550/arXiv.2605.30126"
 pdf_url: "https://arxiv.org/pdf/2605.30126v1"
 project: "https://parcel-elastic-inference.github.io/"
 pdf: "[[papers/pdfs/2605.30126v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2605.30126v1/"
 image_index: "[[papers/images/2605.30126v1/index.md]]"
 authors:
@@ -52,7 +52,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2605.30126v1.pdf]]
 - [x] 项目页:: [PARCEL project page](https://parcel-elastic-inference.github.io/)
 - [ ] 代码:: 未发现公开代码仓库
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2605.30126v1/index.md]]
 - [ ] 阅读状态:: unread
 

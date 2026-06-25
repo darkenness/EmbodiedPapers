@@ -282,7 +282,7 @@ def write_index(index_file: Path, records: list[ImageRecord], vault: Path, max_e
 
     embeddable = [record for record in records if record.path.suffix.lower() in EMBED_EXTENSIONS]
     if embeddable:
-        lines.extend(["## 可复制到双语稿", ""])
+        lines.extend(["## 可复制到精读稿", ""])
         for record in embeddable[:max_embeds]:
             lines.append(f"![[{obsidian_path(record.path, vault)}|700]]")
         if len(embeddable) > max_embeds:

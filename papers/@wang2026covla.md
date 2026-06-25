@@ -24,7 +24,7 @@ openalex: "https://openalex.org/W7165390006"
 published: 2026-06-18
 updated: 2026-06-18
 pdf: "[[papers/pdfs/2606.20285v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2606.20285v1/"
 image_index: "[[papers/images/2606.20285v1/index.md]]"
 authors:
@@ -60,7 +60,7 @@ topics:
 
 - [x] PDF:: [[papers/pdfs/2606.20285v1.pdf]]
 - [x] 图片索引:: [[papers/images/2606.20285v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[dual-arm manipulation]], [[bimanual coordination]], [[@physicalintelligence2024pi0]], [[@physicalintelligence2025pi05]], [[RoboTwin]], [[@tang2026frs]], [[@kim2026serf]], [[@tencent2026hy-embodied-05]], [[@processbench2026roboprocessbench]]

@@ -41,7 +41,7 @@ url: ${yamlString(choice.id)}
 venue: ${yamlString(venue)}
 openalex: ${yamlString(choice.id)}
 pdf:
-bilingual:
+reading:
 images:
 image_index:
 authors:
@@ -55,8 +55,8 @@ ${yamlList((choice.topics ?? []).slice(0, 6).map(item => item.display_name))}
 # ${choice.title}
 
 - [ ] PDF:: 
-- [ ] 双语阅读稿:: 待整理
-- [ ] 地图维护:: 在 [[论文地图]] 的快速索引中加入本篇，并运行 \`python setting/scripts/check_paper_map.py --sync-bilingual-markers\`
+- [ ] 精读稿:: 待整理
+- [ ] 地图维护:: 在 [[论文地图]] 的快速索引中加入本篇，并运行 \`python setting/scripts/check_paper_map.py --sync-reading-markers\`
 - [ ] 阅读状态:: unread
 
 related:: 

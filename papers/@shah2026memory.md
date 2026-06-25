@@ -19,7 +19,7 @@ project: "https://robin-lab.cs.utexas.edu/HALO"
 published: 2026-06-23
 updated: 2026-06-23
 pdf: "[[papers/pdfs/2606.25136v1.pdf]]"
-bilingual:
+reading:
 image_index: "[[papers/images/2606.25136v1/index.md]]"
 authors:
   - "[[Rutav Shah]]"
@@ -48,7 +48,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2606.25136v1.pdf]]
 - [x] 项目页:: [HALO](https://robin-lab.cs.utexas.edu/HALO)
 - [x] 图片索引:: [[papers/images/2606.25136v1/index.md]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[memory retrieval]], [[visuomotor policy]], [[long-horizon control]], [[partial observability]], [[video question answering]], [[sparse attention]], [[ReMemBench]], [[@kim2026serf]], [[@yang2026memorywam]], [[@jing2026learning]], [[@xu2026univiewvla]], [[@wang2026covla]]

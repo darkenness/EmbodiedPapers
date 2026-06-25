@@ -13,7 +13,7 @@ venue: "IEEE Robotics and Automation Letters"
 arxiv: "2308.14277v2"
 project: "https://linchangyi1.github.io/9DTact"
 pdf: "[[papers/pdfs/2308.14277v2.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2308.14277v2/"
 image_index: "[[papers/images/2308.14277v2/index.md]]"
 authors:
@@ -38,7 +38,7 @@ topics:
 # 9DTact: A Compact Vision-Based Tactile Sensor for Accurate 3D Shape Reconstruction and Generalizable 6D Force Estimation
 
 - [x] PDF:: [[papers/pdfs/2308.14277v2.pdf]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2308.14277v2/index.md]]
 - [ ] 阅读状态:: unread
 

@@ -16,7 +16,7 @@ published_url: "https://doi.org/10.1109/ICRA48506.2021.9560783"
 arxiv: "2106.08851v1"
 project: "https://gelsight.csail.mit.edu/wedge/"
 pdf: "[[papers/pdfs/2106.08851v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2106.08851v1/"
 image_index: "[[papers/images/2106.08851v1/index.md]]"
 authors:
@@ -41,7 +41,7 @@ topics:
 # GelSight Wedge: Measuring High-Resolution 3D Contact Geometry with a Compact Robot Finger
 
 - [x] PDF:: [[papers/pdfs/2106.08851v1.pdf]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2106.08851v1/index.md]]
 - [ ] 阅读状态:: unread
 

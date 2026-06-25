@@ -20,7 +20,7 @@ pdf_url: "https://arxiv.org/pdf/2604.07430v1"
 code: "https://github.com/Tencent-Hunyuan/HY-Embodied"
 model: "https://huggingface.co/tencent/HY-Embodied-0.5"
 pdf: "[[papers/pdfs/2604.07430v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/2604.07430v1/"
 image_index: "[[papers/images/2604.07430v1/index.md]]"
 authors:
@@ -68,7 +68,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2604.07430v1.pdf]]
 - [x] 代码:: [Tencent-Hunyuan/HY-Embodied](https://github.com/Tencent-Hunyuan/HY-Embodied)
 - [x] 模型:: [tencent/HY-Embodied-0.5](https://huggingface.co/tencent/HY-Embodied-0.5)
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2604.07430v1/index.md]]
 - [ ] 阅读状态:: unread
 

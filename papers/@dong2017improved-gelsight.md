@@ -16,7 +16,7 @@ published_url: "https://doi.org/10.1109/IROS.2017.8202149"
 arxiv: "1708.00922v1"
 pdf_url: "https://arxiv.org/pdf/1708.00922v1"
 pdf: "[[papers/pdfs/1708.00922v1.pdf]]"
-bilingual:
+reading:
 images: "papers/images/1708.00922v1/"
 image_index: "[[papers/images/1708.00922v1/index.md]]"
 authors:
@@ -40,7 +40,7 @@ topics:
 # Improved GelSight Tactile Sensor for Measuring Geometry and Slip
 
 - [x] PDF:: [[papers/pdfs/1708.00922v1.pdf]]
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/1708.00922v1/index.md]]
 - [ ] 阅读状态:: unread
 

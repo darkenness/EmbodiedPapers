@@ -14,7 +14,7 @@ dataset: "https://huggingface.co/datasets/ProcessBench-2026/RoboProcessBench"
 catalog: "https://claru.ai/datasets/processbench-2026-roboprocessbench"
 venue: "Hugging Face dataset"
 venue_short: "HF Dataset"
-bilingual:
+reading:
 images: "papers/images/roboprocessbench/"
 image_index: "[[papers/images/roboprocessbench/index.md]]"
 maintainers:
@@ -35,7 +35,7 @@ topics:
 
 - [ ] PDF:: 未发现公开论文 PDF / arXiv 条目
 - [x] 数据集:: [ProcessBench-2026/RoboProcessBench](https://huggingface.co/datasets/ProcessBench-2026/RoboProcessBench)
-- [ ] 双语阅读稿:: 待整理
+- [ ] 精读稿:: 待整理
 - [x] 图片索引:: [[papers/images/roboprocessbench/index.md]]
 - [ ] 阅读状态:: unread
 
