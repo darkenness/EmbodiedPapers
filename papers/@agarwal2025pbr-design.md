@@ -18,7 +18,7 @@ pmid: "39953115"
 pmcid: "PMC11828998"
 pdf_url: "https://www.nature.com/articles/s44172-025-00350-4.pdf"
 pdf: "[[papers/pdfs/s44172-025-00350-4.pdf]]"
-bilingual: "[[papers/bilingual/agarwal2025-pbr-design_中英混读.md]]"
+bilingual:
 images: "papers/images/agarwal2025-pbr-design/"
 image_index: "[[papers/images/agarwal2025-pbr-design/index.md]]"
 authors:
@@ -46,7 +46,7 @@ topics:
 # Vision-based tactile sensor design using physically based rendering
 
 - [x] PDF:: [[papers/pdfs/s44172-025-00350-4.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/agarwal2025-pbr-design_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/agarwal2025-pbr-design/index.md]]
 - [ ] 阅读状态:: unread
 

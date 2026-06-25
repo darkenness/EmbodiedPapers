@@ -22,7 +22,6 @@ published: 2026-06-18
 updated: 2026-06-18
 pdf: "[[papers/pdfs/2606.20562v1.pdf]]"
 bilingual:
-images: "papers/images/2606.20562v1/"
 image_index: "[[papers/images/2606.20562v1/index.md]]"
 authors:
   - "[[Sizhe Yang]]"
@@ -61,7 +60,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2606.20562v1.pdf]]
 - [x] 项目页:: [MemoryWAM](https://yangsizhe.github.io/MemoryWAM/)
 - [x] 图片索引:: [[papers/images/2606.20562v1/index.md]]
-- [ ] 双语阅读稿::
+- [ ] 双语阅读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[world action model]], [[persistent memory]], [[long-horizon manipulation]], [[RMBench]], [[@zhang2026contactworld]], [[@kim2026serf]], [[@physicalintelligence2025pi05]], [[@physicalintelligence2024pi0]], [[@niu2026trex]]

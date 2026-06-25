@@ -19,7 +19,7 @@ ieee: "https://ieeexplore.ieee.org/document/9028163"
 repository: "https://hira.hope.ac.uk/id/eprint/3041/"
 pdf_url: "https://hira.hope.ac.uk/id/eprint/3041/1/Final_GelSightReview.pdf"
 pdf: "[[papers/pdfs/abad2020visuotactile-review.pdf]]"
-bilingual: "[[papers/bilingual/abad2020visuotactile-review_中英混读.md]]"
+bilingual:
 images: "papers/images/abad2020visuotactile-review/"
 image_index: "[[papers/images/abad2020visuotactile-review/index.md]]"
 authors:
@@ -41,7 +41,7 @@ topics:
 # Visuotactile Sensors With Emphasis on GelSight Sensor: A Review
 
 - [x] PDF:: [[papers/pdfs/abad2020visuotactile-review.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/abad2020visuotactile-review_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/abad2020visuotactile-review/index.md]]
 - [ ] 阅读状态:: unread
 

@@ -16,7 +16,7 @@ published_url: "https://doi.org/10.1109/LRA.2023.3333701"
 arxiv: "2307.02928v2"
 pdf_url: "https://arxiv.org/pdf/2307.02928v2"
 pdf: "[[papers/pdfs/2307.02928v2.pdf]]"
-bilingual: "[[papers/bilingual/2307.02928v2_中英混读.md]]"
+bilingual:
 images: "papers/images/2307.02928v2/"
 image_index: "[[papers/images/2307.02928v2/index.md]]"
 authors:
@@ -44,7 +44,7 @@ topics:
 # AllSight: A Low-Cost and High-Resolution Round Tactile Sensor with Zero-Shot Learning Capability
 
 - [x] PDF:: [[papers/pdfs/2307.02928v2.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/2307.02928v2_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2307.02928v2/index.md]]
 - [ ] 阅读状态:: unread
 

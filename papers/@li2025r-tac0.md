@@ -16,7 +16,7 @@ published_url: "https://doi.org/10.1109/IROS60139.2025.11246144"
 code: "https://github.com/bigai-ai/PP-Tac"
 pdf_url: "https://www.bigai.ai/wp-content/uploads/2025/09/%E4%BC%9A%E8%AE%AE%E5%85%A8%E6%96%87-%E6%9D%8E%E7%9A%96%E6%9E%97.pdf"
 pdf: "[[papers/pdfs/li2025r-tac0.pdf]]"
-bilingual: "[[papers/bilingual/li2025r-tac0_中英混读.md]]"
+bilingual:
 images: "papers/images/li2025r-tac0/"
 image_index: "[[papers/images/li2025r-tac0/index.md]]"
 authors:
@@ -49,7 +49,7 @@ topics:
 # R-Tac0: A Rounded High-Frequency Transferable Monochrome Vision-based Tactile Sensor for Shape Reconstruction
 
 - [x] PDF:: [[papers/pdfs/li2025r-tac0.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/li2025r-tac0_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/li2025r-tac0/index.md]]
 - [ ] 阅读状态:: unread
 

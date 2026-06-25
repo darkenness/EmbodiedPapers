@@ -18,7 +18,7 @@ arxiv: "2209.10122v2"
 code: "https://github.com/armlabstanford/DenseTact"
 video: "https://youtu.be/5S74w0iSPz8"
 pdf: "[[papers/pdfs/2209.10122v2.pdf]]"
-bilingual: "[[papers/bilingual/2209.10122v2_中英混读.md]]"
+bilingual:
 images: "papers/images/2209.10122v2/"
 image_index: "[[papers/images/2209.10122v2/index.md]]"
 authors:
@@ -41,7 +41,7 @@ topics:
 # DenseTact 2.0: Optical Tactile Sensor for Shape and Force Reconstruction
 
 - [x] PDF:: [[papers/pdfs/2209.10122v2.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/2209.10122v2_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2209.10122v2/index.md]]
 - [ ] 阅读状态:: unread
 

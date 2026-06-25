@@ -23,7 +23,6 @@ published: 2025-04-22
 updated: 2025-04-22
 pdf: "[[papers/pdfs/2504.16054v1.pdf]]"
 bilingual:
-images: "papers/images/2504.16054v1/"
 image_index: "[[papers/images/2504.16054v1/index.md]]"
 authors:
   - "[[Physical Intelligence]]"
@@ -83,7 +82,7 @@ topics:
 - [x] 项目页:: [π0.5](https://www.pi.website/blog/pi05)
 - [x] 代码:: [Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
 - [x] 图片索引:: [[papers/images/2504.16054v1/index.md]]
-- [ ] 双语阅读稿::
+- [ ] 双语阅读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[open-world generalization]], [[mobile manipulation]], [[long-horizon manipulation]], [[@physicalintelligence2024pi0]], [[@physicalintelligence2026pi07]], [[@kim2026serf]], [[@xu2026egoguide]], [[@tencent2026hy-embodied-05]], [[@wang2026covla]]

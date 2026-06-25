@@ -16,7 +16,7 @@ published_url: "https://doi.org/10.1109/ICRA57147.2024.10610508"
 arxiv: "2406.00485v1"
 pdf_url: "https://arxiv.org/pdf/2406.00485v1"
 pdf: "[[papers/pdfs/2406.00485v1.pdf]]"
-bilingual: "[[papers/bilingual/2406.00485v1_中英混读.md]]"
+bilingual:
 images: "papers/images/2406.00485v1/"
 image_index: "[[papers/images/2406.00485v1/index.md]]"
 authors:
@@ -49,7 +49,7 @@ topics:
 # TacShade: A New 3D-printed Soft Optical Tactile Sensor Based on Light, Shadow and Greyscale for Shape Reconstruction
 
 - [x] PDF:: [[papers/pdfs/2406.00485v1.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/2406.00485v1_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2406.00485v1/index.md]]
 - [ ] 阅读状态:: unread
 

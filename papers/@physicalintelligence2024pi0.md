@@ -24,7 +24,6 @@ published: 2024-10-31
 updated: 2026-01-08
 pdf: "[[papers/pdfs/2410.24164v4.pdf]]"
 bilingual:
-images: "papers/images/2410.24164v4/"
 image_index: "[[papers/images/2410.24164v4/index.md]]"
 authors:
   - "[[Kevin Black]]"
@@ -72,7 +71,7 @@ topics:
 - [x] 项目页:: [π0](https://www.pi.website/blog/pi0)
 - [x] 代码:: [Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
 - [x] 图片索引:: [[papers/images/2410.24164v4/index.md]]
-- [ ] 双语阅读稿::
+- [ ] 双语阅读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[flow matching]], [[cross-embodiment learning]], [[PaliGemma]], [[Open X-Embodiment]], [[@physicalintelligence2025pi05]], [[@physicalintelligence2026pi07]], [[@tang2026frs]], [[@wang2026covla]], [[@kim2026serf]], [[@tencent2026hy-embodied-05]]

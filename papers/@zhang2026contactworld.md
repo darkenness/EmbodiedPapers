@@ -23,7 +23,7 @@ video: "https://drive.google.com/file/d/1kWCeB5C1ebT7S4B8_Ge6phriIfrAhvMx/view?u
 published: 2026-06-11
 updated: 2026-06-11
 pdf: "[[papers/pdfs/2606.13877v1.pdf]]"
-bilingual: "[[papers/bilingual/2606.13877v1_中英混读.md]]"
+bilingual:
 images: "papers/images/2606.13877v1/"
 image_index: "[[papers/images/2606.13877v1/index.md]]"
 authors:
@@ -60,7 +60,7 @@ topics:
 - [x] 代码:: [PokuangZhou/ContactWorld](https://github.com/PokuangZhou/ContactWorld)
 - [x] 数据集:: [Hugging Face ContactWorld](https://huggingface.co/datasets/Pokuang/ContactWorld/tree/main)
 - [x] 视频:: [Project video](https://drive.google.com/file/d/1kWCeB5C1ebT7S4B8_Ge6phriIfrAhvMx/view?usp=drive_link)
-- [x] 双语阅读稿:: [[papers/bilingual/2606.13877v1_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2606.13877v1/index.md]]
 - [ ] 阅读状态:: unread
 

@@ -26,7 +26,7 @@ dataset: "https://zenodo.org/records/18462608"
 dataset_doi: "10.5281/zenodo.18462608"
 pypi: "https://pypi.org/project/py3dcal/"
 pdf: "[[papers/pdfs/kota2026-3dcal.pdf]]"
-bilingual: "[[papers/bilingual/kota2026-3dcal_中英混读.md]]"
+bilingual:
 images: "papers/images/kota2026-3dcal/"
 image_index: "[[papers/images/kota2026-3dcal/index.md]]"
 authors:
@@ -49,7 +49,7 @@ topics:
 # 3D Cal: An Open-Source Software Library for Calibrating Tactile Sensors
 
 - [x] PDF:: [[papers/pdfs/kota2026-3dcal.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/kota2026-3dcal_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/kota2026-3dcal/index.md]]
 - [ ] 阅读状态:: unread
 

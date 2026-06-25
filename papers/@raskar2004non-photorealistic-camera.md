@@ -18,7 +18,7 @@ pages: "679-688"
 technical_report: "MERL TR2004-050"
 pdf_url: "https://www.merl.com/publications/docs/TR2004-050.pdf"
 pdf: "[[papers/pdfs/raskar2004non-photorealistic-camera.pdf]]"
-bilingual: "[[papers/bilingual/raskar2004non-photorealistic-camera_中英混读.md]]"
+bilingual:
 images: "papers/images/raskar2004non-photorealistic-camera/"
 image_index: "[[papers/images/raskar2004non-photorealistic-camera/index.md]]"
 authors:
@@ -45,7 +45,7 @@ topics:
 # Non-Photorealistic Camera: Depth Edge Detection and Stylized Rendering Using Multi-Flash Imaging
 
 - [x] PDF:: [[papers/pdfs/raskar2004non-photorealistic-camera.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/raskar2004non-photorealistic-camera_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/raskar2004non-photorealistic-camera/index.md]]
 - [ ] 阅读状态:: unread
 

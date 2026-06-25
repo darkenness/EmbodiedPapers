@@ -16,7 +16,7 @@ pages: "2762"
 pdf_url: "https://www.mdpi.com/1424-8220/17/12/2762/pdf"
 pdf_mirror: "https://web.stanford.edu/class/cs114/readings/MK-Yuan.pdf"
 pdf: "[[papers/pdfs/yuan2017gelsight.pdf]]"
-bilingual: "[[papers/bilingual/yuan2017gelsight_中英混读.md]]"
+bilingual:
 images: "papers/images/yuan2017gelsight/"
 image_index: "[[papers/images/yuan2017gelsight/index.md]]"
 authors:
@@ -39,7 +39,7 @@ topics:
 # GelSight: High-Resolution Robot Tactile Sensors for Estimating Geometry and Force
 
 - [x] PDF:: [[papers/pdfs/yuan2017gelsight.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/yuan2017gelsight_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/yuan2017gelsight/index.md]]
 - [ ] 阅读状态:: unread
 

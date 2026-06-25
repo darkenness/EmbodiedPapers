@@ -22,7 +22,7 @@ project: "https://zgc-embodyai.github.io/PhysBrain/"
 published: 2025-12-18
 updated: 2026-02-04
 pdf: "[[papers/pdfs/2512.16793v2.pdf]]"
-bilingual: "[[papers/bilingual/2512.16793v2_中英混读.md]]"
+bilingual:
 images: "papers/images/2512.16793v2/"
 image_index: "[[papers/images/2512.16793v2/index.md]]"
 authors:
@@ -65,7 +65,7 @@ topics:
 - [x] PDF:: [[papers/pdfs/2512.16793v2.pdf]]
 - [x] 项目页:: [PhysBrain](https://zgc-embodyai.github.io/PhysBrain/)
 - [ ] 代码/数据:: 项目页有 Code / Dataset 字样，但当前未发现可点击的公开仓库或数据集链接。
-- [x] 双语阅读稿:: [[papers/bilingual/2512.16793v2_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/2512.16793v2/index.md]]
 - [ ] 阅读状态:: unread
 

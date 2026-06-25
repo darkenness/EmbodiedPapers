@@ -20,7 +20,7 @@ arxiv_url: "https://arxiv.org/abs/2504.00017"
 arxiv_doi: "10.48550/arXiv.2504.00017"
 pdf_url: "https://arxiv.org/pdf/2504.00017"
 pdf: "[[papers/pdfs/redkin2024dynamic-illumination.pdf]]"
-bilingual: "[[papers/bilingual/redkin2024dynamic-illumination_中英混读.md]]"
+bilingual:
 images: "papers/images/redkin2024dynamic-illumination/"
 image_index: "[[papers/images/redkin2024dynamic-illumination/index.md]]"
 authors:
@@ -44,7 +44,7 @@ topics:
 # Enhance Vision-based Tactile Sensors via Dynamic Illumination and Image Fusion
 
 - [x] PDF:: [[papers/pdfs/redkin2024dynamic-illumination.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/redkin2024dynamic-illumination_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/redkin2024dynamic-illumination/index.md]]
 - [ ] 阅读状态:: unread
 

@@ -24,7 +24,6 @@ published: 2026-06-15
 updated: 2026-06-15
 pdf: "[[papers/pdfs/2606.17055v1.pdf]]"
 bilingual:
-images: "papers/images/2606.17055v1/"
 image_index: "[[papers/images/2606.17055v1/index.md]]"
 authors:
   - "[[Dantong Niu]]"
@@ -78,7 +77,7 @@ topics:
 - [x] 代码:: [ZhuoyangLiu2005/T-Rex](https://github.com/ZhuoyangLiu2005/T-Rex)
 - [x] 数据集:: [T-Rex Dataset](https://tactile-rex.github.io/dataset/)
 - [x] 图片索引:: [[papers/images/2606.17055v1/index.md]]
-- [ ] 双语阅读稿::
+- [ ] 双语阅读稿:: 待整理
 - [ ] 阅读状态:: unread
 
 related:: [[vision-language-action]], [[tactile sensing]], [[dexterous manipulation]], [[mixture-of-transformers]], [[@physicalintelligence2025pi05]], [[@zhang2026contactworld]], [[@lin2026physbrain]], [[@yuan2017gelsight]], [[@wang2024large-scale-vbts]]

@@ -19,7 +19,7 @@ arxiv: "2509.02478v2"
 arxiv_url: "https://arxiv.org/abs/2509.02478"
 pdf_url: "https://arxiv.org/pdf/2509.02478"
 pdf: "[[papers/pdfs/li2025vbts-classification-review.pdf]]"
-bilingual: "[[papers/bilingual/li2025vbts-classification-review_中英混读.md]]"
+bilingual:
 images: "papers/images/li2025vbts-classification-review/"
 image_index: "[[papers/images/li2025vbts-classification-review/index.md]]"
 authors:
@@ -46,7 +46,7 @@ topics:
 # Classification of Vision-Based Tactile Sensors: A Review
 
 - [x] PDF:: [[papers/pdfs/li2025vbts-classification-review.pdf]]
-- [x] 双语阅读稿:: [[papers/bilingual/li2025vbts-classification-review_中英混读.md]]
+- [ ] 双语阅读稿:: 待整理
 - [x] 图片索引:: [[papers/images/li2025vbts-classification-review/index.md]]
 - [ ] 阅读状态:: unread
 
