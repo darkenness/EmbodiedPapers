@@ -3,10 +3,6 @@
 tmp/
 .trash/
 
-# Obsidian local workspace state
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-
 # OS metadata
 .DS_Store
 Thumbs.db
@@ -26,40 +22,9 @@ __pycache__/
 *.swp
 *.log
 
-# ==================== Obsidian 配置策略（功能文件优先）====================
-# 原则：只版本控制“功能性配置”，不跟踪插件运行时代码和频繁变化的UI/视图状态。
-# 插件安装由 community-plugins.json 控制，Obsidian 会自动处理安装/更新。
-#
-# 常见会频繁变动的包括：
-# - 插件的 data.json（尤其是图谱类、文件管理类插件的视图状态、缩放、最近使用等）
-# - 核心 graph.json、backlink.json 等状态文件
-
-# 1. 忽略整个 plugins 目录（插件代码 + 大部分插件状态）
-.obsidian/plugins/
-
-# 2. 重新包含我们希望保留配置的插件目录（必须先放行目录，否定规则才能生效）
-!.obsidian/plugins/templater-obsidian/
-!.obsidian/plugins/dataview/
-!.obsidian/plugins/customjs/
-
-# 3. 只保留这些插件的 data.json（真正有价值的功能配置）
-!.obsidian/plugins/templater-obsidian/data.json
-!.obsidian/plugins/dataview/data.json
-!.obsidian/plugins/customjs/data.json
-
-# 4. 忽略高频变化的 Obsidian 视图/状态文件（graph 缩放、力导向、切换器、属性类型等）
-.obsidian/graph.json
-.obsidian/backlink.json
-.obsidian/switcher.json
-.obsidian/types.json
-
 # ==================== 论文库本地化策略（仅保留配置同步） ======================
 # 只保留仓库级配置（AGENTS.md、论文地图、setting 配置）;
 # 具体论文内容与下载产物全部本地化，不再同步。
 papers/
 institutions/
 researchers/
-
-# 备选：如果想让 git-file-explorer 的偏好设置也跨设备同步，取消下面两行注释
-# !.obsidian/plugins/git-file-explorer/
-# !.obsidian/plugins/git-file-explorer/data.json

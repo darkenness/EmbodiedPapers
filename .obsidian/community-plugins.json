@@ -4,5 +4,6 @@
   "templater-obsidian",
   "git-file-explorer",
   "realclaudian",
-  "obsidian-git"
+  "obsidian-git",
+  "colored-tags"
 ]
