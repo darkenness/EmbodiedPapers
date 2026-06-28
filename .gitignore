@@ -53,6 +53,11 @@ __pycache__/
 .obsidian/switcher.json
 .obsidian/types.json
 
+# ==================== 论文库本地化策略（仅保留配置同步） ======================
+# 只保留仓库级配置（AGENTS.md、论文地图、setting 配置）;
+# 具体论文内容与下载产物全部本地化，不再同步。
+papers/
+
 # 备选：如果想让 git-file-explorer 的偏好设置也跨设备同步，取消下面两行注释
 # !.obsidian/plugins/git-file-explorer/
 # !.obsidian/plugins/git-file-explorer/data.json
