@@ -30,14 +30,14 @@ class Research {
     this.renderProfileSummary(dv, "researcher");
     this.renderExternalLinks(dv);
     this.renderLinkedPaperSection(dv, "参与文献");
-    this.renderEmbed(dv, ["embed_url", "homepage"]);
+    this.renderEmbed(dv, ["embed_url"]);
   }
 
   institution(dv) {
     this.renderProfileSummary(dv, "institution");
     this.renderExternalLinks(dv);
     this.renderLinkedPaperSection(dv, "相关文献");
-    this.renderEmbed(dv, ["embed_url", "homepage"]);
+    this.renderEmbed(dv, ["embed_url"]);
   }
 
   topic(dv, query = undefined) {

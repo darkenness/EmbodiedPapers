@@ -1,0 +1,1701 @@
+
+
+===== PAGE 1 =====
+
+LA4VLA: Learning to Act without Seeing
+via Language-Action Pretraining
+Tao Lin1,2,∗, Yuxin Du1,2,∗, Yiran Mao1,∗, Zewei Ye1, Yilei Zhong1, Bing Cheng1, Yiming Wang1,
+Jiting Liu1, Yang Tian1, Junchi Yan1, Feiran Wu2, Zenan Meng2, Hu Wei2,
+Yuqian Fu4,†, Gen Li3,†, Bo Zhao1,†
+1School of AI, Shanghai Jiao Tong University
+2Alibaba Group
+3Nanyang Technological University
+4KAUST
+∗Equal contribution, †Corresponding authors.
+Email: taolin200108@gmail.com, bo.zhao@sjtu.edu.cn
+Project Page: https://github.com/MINT-SJTU/LA4VLA
+Abstract
+Vision-Language-Action (VLA) models are commonly pretrained on robot demonstrations by
+jointly mapping visual observations and language instructions to actions. However, dense visual-
+action supervision can dominate the comparatively sparse language-action signal. As a result,
+policies may rely on visual shortcuts rather than learn how language conditions action execution,
+making them sensitive to visual variations. To address this limitation, we propose LA4VLA, a
+language-action pretraining framework that enables policies to acquire language-conditioned action
+priors without visual observations. These priors capture reusable manipulation skills shared across
+tasks and scenes, reducing reliance on scene-specific visual cues. Specifically, LA4VLA decomposes
+expert demonstration trajectories into atomic action segments and pairs each segment with a
+corresponding low-level action description. This yields LA4-33K, a dataset of 33K Language-Action
+(LA) episodes derived entirely from existing demonstrations without additional robot data collection.
+We further develop LA4VLA-1B, a lightweight 1B-parameter VLA model, and investigate three
+paradigms for incorporating language-action supervision into VLA learning: LA-only pretraining,
+sequential LA-to-VLA pretraining, and mixed LA-VLA pretraining. Across simulation and real-
+world tasks, LA-pretrained policies consistently outperform matched VLA-pretrained counterparts,
+while combining LA and VLA supervision leads to further gains. In particular, mixed LA-VLA
+pretraining improves the average success rate of LA4VLA-1B over the no-pretraining baseline
+by up to 17.8 and 45.0 percentage points in simulation and real-world tasks, respectively. These
+results establish LA4VLA as an effective and complementary pretraining strategy for building
+stronger and more robust VLA policies.
+1
+Introduction
+Vision-Language-Action (VLA) models [1–9] have recently emerged as a promising paradigm for general-
+purpose robot manipulation. These models are typically trained on large-scale robot demonstrations [10–13],
+where each trajectory contains visual observations, action sequences, and a high-level language instruction
+specifying the task goal. By learning to predict actions from the current visual observations and the given
+instruction, this multimodal joint training paradigm enables robots to perform diverse manipulation tasks
+1
+arXiv:2606.27295v1  [cs.RO]  25 Jun 2026
+
+
+===== PAGE 2 =====
+
+Figure 1 Overview of the LA4VLA framework. The left panel illustrates the construction of Language-Action data
+by reorganizing VLA demonstrations into atomic instruction-action segments. The middle panel summarizes the
+LA4VLA pretraining paradigm, which studies how LA supervision can be used alone or combined with standard VLA
+pretraining. The right panel presents representative performance across simulation, architectures, real-world transfer,
+and robustness evaluations.
+from language commands.
+Despite its effectiveness, the joint VLA training paradigm introduces an inherent asymmetry in how vision
+and language contribute to action learning. This asymmetry appears at two levels. First, at the data level, a
+single robot trajectory can contain hundreds or even thousands of image-action pairs, but is typically paired
+with only one high-level task instruction. The instruction often specifies only the overall task goal, while
+visual observations and robot states vary continuously throughout the trajectory. As a result, vision-action
+supervision is temporally dense and dynamically changing, whereas language-action supervision has much less
+semantic variation and lacks explicit alignment to local action stages. Second, at the model-input level, visual
+observations are usually encoded into hundreds of image tokens, often outnumbering the tokens of language
+instructions by one to two orders of magnitude. Together, these data-level and input-level asymmetries can bias
+action learning toward visual signals and dilute the supervision for learning how language conditions actions.
+Consequently, a policy may appear language-conditioned, while its internal representations remain dominated
+by visual-action associations. This can lead to visual shortcuts that weaken the influence of language intent,
+leaving language-action grounding underdeveloped [14, 15]. Such entanglement becomes especially problematic
+under visual variations, such as changes in viewpoint, background, lighting, object appearance, or scene layout,
+where robust manipulation requires actions to remain conditioned on the instruction rather than on spurious
+visual correlations.
+This motivates us to rethink VLA pretraining through one key question: Can language-action grounding be
+decoupled from visually dominated VLA learning? We hypothesize that explicitly removing visual observations
+during pretraining can prevent the policy from exploiting visual shortcuts and encourage it to focus on the
+intrinsic relationship between language and action. To this end, we explore vision-agnostic language-action
+pretraining, where the policy predicts actions from language instructions and proprioceptive states without
+visual observations. The objective is not intended to replace visual grounding, since object localization and
+scene-specific target selection still require vision. Instead, it encourages the policy to learn vision-independent
+action knowledge, such as action dynamics, temporal consistency, and language-conditioned motion patterns.
+2
+
+
+===== PAGE 3 =====
+
+Building on this idea, we propose LA4VLA, a language-action pretraining framework that constructs explicit
+Language-Action (LA) supervision and integrates it into VLA learning. Specifically, LA4VLA decomposes
+complete demonstration trajectories into short atomic action segments and associates each segment with a
+corresponding low-level action description. The resulting LA pairs enable the policy to learn how language
+conditions action execution without relying on visual observations. These atomic actions, such as moving,
+grasping, lifting, transporting, pressing, and rotating, capture reusable manipulation skills shared across
+tasks and scenes. Based on this trajectory decomposition, we build LA4-33K, a dataset containing 33K LA
+pairs derived entirely from existing expert trajectories [10], without requiring additional robot data collection.
+Rather than merely scaling the amount of training data, LA4VLA reorganizes existing demonstrations
+to expose explicit language-action supervision that is often implicit or diluted in standard VLA training.
+Pretraining on these vision-agnostic LA pairs enables the policy to acquire reusable language-conditioned
+action priors that can strengthen downstream VLA learning.
+We systematically evaluate the effectiveness of LA pretraining by developing LA4VLA-1B, a lightweight 1B-
+parameter VLA model, and testing it across several simulation benchmarks and real-world robot manipulation
+tasks. To examine how language-action supervision can be integrated into VLA policy learning, we study a
+series of pretraining paradigms, including pure LA pretraining, sequential LA-to-VLA pretraining, and mixed
+LA-VLA pretraining. Consistent results across LA4VLA-1B and StarVLA [16] show that pretraining on LA
+data alone yields stronger downstream improvements than pretraining with VLA data alone, while combining
+LA and VLA data leads to further gains. These findings demonstrate that language-action supervision
+provides an effective and transferable training signal for downstream VLA policies and is complementary
+to existing VLA learning pipelines. In particular, LA4VLA-1B achieves average success rates of 87.53%
+on MetaWorld [17], 96.28% on LIBERO [18], and 83.3% on real-world manipulation tasks, improving over
+the baselines by 17.80, 3.43, and 45.0 percentage points, respectively. Beyond average task success, our
+analysis further shows that LA pretraining improves robustness under visual perturbations, supporting the
+hypothesis that language-conditioned action priors can reduce over-reliance on visual shortcuts. Figure 1
+provides an overview of the LA4VLA framework, including LA data construction, the pretraining paradigm,
+and representative performance across simulation benchmarks, architectures, and real-world manipulation
+tasks. Overall, our main contributions are summarized as follows:
+• We propose LA4VLA, a language-action pretraining framework that decouples language-conditioned
+action learning from visually grounded VLA training, enabling policies to learn reusable action priors
+that generalize across scenes and tasks without over-relying on visual cues.
+• We construct Language-Action (LA) data from existing expert demonstrations by decomposing full
+trajectories into atomic action segments and pairing each segment with a low-level action description.
+This results in LA4-33K, a dataset of 33K vision-agnostic LA episodes created without additional robot
+data collection.
+• We show that LA pretraining consistently enhances VLA policy performance across simulation bench-
+marks, model architectures, and real-world manipulation tasks, improves robustness under visual
+perturbations, and yields further gains when combined with standard VLA data.
+2
+Related Work
+2.1
+Vision-Language-Action Models and Robot Pretraining
+Vision-Language-Action (VLA) models have become a common paradigm for learning robot policies from
+language-conditioned demonstrations. Early robot transformer models showed that large-scale behavior
+cloning can support multi-task manipulation from visual observations and language instructions [11, 19, 20].
+Recent VLA models further scale this paradigm with stronger vision-language backbones, larger robot datasets,
+and more expressive action heads, leading to open-source and generalist robot policies such as OpenVLA, π0,
+GR00T N1, SmolVLA, Evo-1, StarVLA, and Qwen-VLA [1–4, 16, 21, 22]. These models have demonstrated
+strong performance across simulation benchmarks and real-world manipulation tasks, making VLA pretraining
+a central direction for general-purpose robot policy learning.
+3
+
+
+===== PAGE 4 =====
+
+Despite differences in architectures, action representations, and training recipes, most existing VLA models
+share the same supervision format: the policy is pretrained on demonstrations that jointly pair visual
+observations, language instructions, and action trajectories. This joint formulation is effective for learning
+visually grounded robot policies, but it also couples visual grounding and action learning from the beginning.
+Recent work has improved this paradigm through better action tokenization, diffusion or flow-matching
+action heads, larger multi-robot datasets, and cross-embodiment conditioning [2, 4, 6, 23–26]. However, these
+improvements still primarily operate within vision-language-action joint training. As a result, the contribution
+of language-action supervision itself remains difficult to isolate, and it is unclear whether the policy learns a
+reusable instruction-conditioned action prior or mainly uses language as a weak condition alongside dense
+visual observations. In contrast, our work explicitly separates language-action learning from visual grounding
+during pretraining, allowing us to study how vision-agnostic action supervision can benefit VLA policies.
+2.2
+Language and Action Supervision for Robot Learning
+Language has long been used to specify robot tasks, goals, and intermediate plans. Language-conditioned
+imitation learning and instruction-following manipulation train policies to execute natural-language commands
+from visual observations [27–29]. Other systems use language models to decompose tasks, generate plans, or
+provide reasoning traces for robot control [30–35]. These approaches show that language is a useful interface
+for robot learning, but in many cases language serves as a task description, high-level plan, or reasoning
+scaffold rather than a direct source of action supervision.
+More recent work has introduced language-to-action signals more explicitly. LAP represents low-level robot
+motions as natural-language action strings, such as descriptions of translational or rotational end-effector
+displacement, and trains a VLM backbone to predict them [36], while Qwen-VLA includes a text-to-action
+stage that trains an action decoder from language and embodiment prompts [4]. These studies demonstrate
+that language can provide more direct supervision for action learning, but do not investigate vision-agnostic
+language-action supervision as a pretraining signal for VLA policy learning. In contrast, our work pairs atomic
+instructions with their corresponding action trajectories, removes visual observations during LA pretraining,
+and systematically studies how this supervision can be used alone or combined with standard VLA pretraining.
+3
+Probing Instruction Following in VLAs
+To examine whether a VLA policy predicts actions by following the instruction or by exploiting the visual
+observations paired with that instruction, we design a controlled diagnostic study. Taking the standard
+paired VLA input as the reference, we keep the language instruction fixed while removing, mismatching, or
+conflicting the visual input, and then systematically examine how the predicted action trajectory changes.
+Our assumption is that, if a policy has learned a robust language-action relation, fixing the instruction should
+keep the predicted motion aligned with the commanded direction. Conversely, if the predicted direction
+changes with the substituted visual input while the instruction remains fixed, it suggests that the policy may
+rely on visual cues rather than on language-action grounding. Instead of conducting this diagnostic on full
+trajectories, we focus on atomic direction-following actions, such as “lower the object downward toward the
+target” and “transport the object horizontally to the left”, where each instruction specifies a short local motion
+and the expected action direction is directly measurable.
+3.1
+Diagnostic Evaluation
+Policy and task setup. For this diagnostic evaluation, we use a VLA policy built on InternVL3-1B [37] with a
+flow matching action head for continuous action prediction. It is trained under the standard VLA format,
+i.e., with paired visual observations, language instructions, robot states, and action trajectories. The only
+difference from standard VLA training is that the policy is trained and evaluated on atomic direction-following
+trajectories, where the end effector moves along a specified Cartesian direction. We construct direction-
+following cases from pairs of atomic-action instructions that differ only in direction, such as motions along the
+positive and negative directions of the same Cartesian axis. For each instruction, the policy predicts an action
+trajectory.
+4
+
+
+===== PAGE 5 =====
+
+Figure 2 Qualitative visualization of instruction-conditioned direction following under different visual input configura-
+tions. The top row shows predicted trajectories projected onto the plane containing the tested motion axis, and the
+bottom row presents endpoint displacement projected onto that axis.
+Evaluated input conditions. We evaluate four visual-input configurations while keeping the target instruction
+L and robot state fixed. Specifically, we consider: 1) Standard paired input (L, V +), where V + denotes
+the visual observation originally paired with the instruction in standard VLA training; 2) Visual-removed
+input (L, ∅), where the visual observation is masked out; 3) Visual-unaligned input (L, ˜V ), where the visual
+observation is replaced with an same-scene observation that is not paired with the current instruction; and 4)
+Visual-conflict input (L, V −), where the visual observation is sampled from a trajectory associated with the
+opposite motion direction. Since the instruction and robot state remain fixed across all conditions, changes in
+the predicted action direction can be attributed to the visual input, allowing us to assess whether the policy
+follows the language instruction or relies on the paired visual observation.
+Metrics. We also use four metrics to quantify whether the predicted motion follows the instruction. The first
+two metrics measure directional alignment. Directional Alignment Rate (DAR) is the fraction of trials whose
+endpoint displacement falls in the instruction-aligned half-space; 0.5 corresponds to random directional choice,
+and values below 0.5 indicate that predictions more often fall in the opposite half-space. Direction Consistency
+Score (DCS) is the cosine similarity between the predicted endpoint displacement and the ground-truth
+endpoint displacement. Since the ground-truth displacement is collected under the corresponding directional
+instruction, DCS evaluates whether the predicted motion follows the instruction-conditioned direction, ranging
+from −1 to 1, where larger values indicate stronger alignment with the demonstrated motion direction. The
+other two metrics measure whether instructions specifying different target directions produce separable motion
+patterns. Separability Ratio (SR) compares the average distance across different instruction directions with the
+average distance within the same instruction direction. Silhouette Score (SS) provides a normalized sample-wise
+clustering measure, evaluating whether each endpoint displacement is closer to its own instruction-direction
+cluster than to other direction clusters. Higher SR and SS indicate clearer instruction-conditioned separation.
+Detailed definitions and formulas for all four metrics are provided in Appendix C.
+3.2
+Diagnostic Results
+Qualitative visualization. Figure 2 visualizes the predicted trajectories for a representative pair of instructions
+specifying opposite motion directions: “move upward to approach the target” and “move downward to
+approach the target”. For each prediction, we compute the start-to-end displacement vector and project both
+the complete trajectory and displacement vector onto the plane containing the tested motion axis. Under
+the Standard paired input, the model produces clearly separated trajectories for the two instructions, with
+endpoint projections falling on the instruction-aligned sides of the tested axis. However, the following visual
+5
+
+
+===== PAGE 6 =====
+
+Table 1 Instruction-following diagnostic under different visual input configurations. Metrics are computed over 100
+direction-following cases for each evaluation condition.
+Condition
+Inputs
+DAR ↑
+DCS ↑
+SR ↑
+SS ↑
+Standard paired input
+(L, V +)
+0.98
+0.95
+2.35
+0.55
+Visual-removed input
+(L, ∅)
+0.63
+0.16
+1.03
+0.04
+Visual-unaligned input
+(L, ˜V )
+0.66
+0.37
+1.13
+0.05
+Visual-conflict input
+(L, V −)
+0.35
+0.03
+1.03
+-0.04
+interventions reveal that this alignment is fragile and not robustly grounded in the language instruction itself.
+With the Visual-removed input, the trajectories become scattered and the two instruction directions are
+poorly separated. With the Visual-unaligned input, opposite instructions no longer produce clearly separable
+endpoint distributions, indicating that the policy cannot reliably distinguish actions based on language once
+the paired visual observation is replaced. Under the Visual-conflict input, the substituted visual observation
+is associated with the opposite motion direction. In this case, the endpoint projections shift away from
+the instruction-aligned direction and become biased toward the direction implied by the substituted visual
+observation. These results show that the policy is highly sensitive to visual input and may deviate from the
+language instruction when the paired visual cue changes.
+Quantitative analysis. Table 1 reports the average results over 100 diverse direction-following cases for each
+evaluation condition. Under the Standard paired input, the model appears to follow the instruction, reaching
+DAR of 0.98 and DCS of 0.95, with clear endpoint separation between opposite instructions (SR 2.35, SS
+0.55). However, this apparent alignment quickly breaks under visual intervention. With the Visual-removed
+input, DCS drops to 0.16 and SS becomes nearly zero, indicating that opposite instructions no longer induce
+clearly separable actions without the paired image. With the Visual-unaligned input, the separation remains
+poor, with DCS of 0.37 and SS of 0.05, showing that replacing the paired image with an unaligned same-scene
+observation is enough to disrupt instruction-conditioned action prediction. The Visual-conflict input gives the
+strongest evidence: DAR drops to 0.35, well below the 0.5 expected under random directional choice, and DCS
+falls to 0.03, meaning that predictions fall in the opposite half-space more often than in the instruction-aligned
+half-space. This indicates that the policy is not merely uncertain, but can be biased away from the instruction
+by a conflicting visual observation.
+These quantitative results are consistent with the qualitative visualizations in Figure 2: standard paired
+inputs can create apparent instruction following, but once the paired visual cue is removed, unaligned, or
+placed in conflict, the policy fails to reliably distinguish actions according to language. Since the instruction
+is fixed across these conditions, this behavior directly supports our diagnostic assumption that changes in
+predicted motion reflect the policy’s dependence on the substituted visual input. Together, the qualitative
+and quantitative results suggest that standard VLA training does not robustly ground action execution in
+language, motivating more direct language-action supervision without paired visual observations.
+4
+LA4VLA: Language-Action Dataset Construction
+4.1
+Overview
+The diagnostic analysis above shows that the instruction-following behavior of VLA policies can become
+unstable under changes in visual input. This suggests that language-action supervision should be exposed more
+directly, rather than always being tied to paired visual observations. To this end, we propose the LA4VLA
+framework for vision-agnostic language-action pretraining, where models learn from language instructions,
+proprioceptive states, and action trajectories without visual inputs.
+To convert standard VLA demonstrations into LA episodes, LA4VLA introduces a construction pipeline
+that segments long demonstration trajectories into short atomic action intervals and annotates each interval
+with a low-level instruction. Visual observations are used only during construction and verification, while
+the resulting LA episodes remove visual inputs and retain only the instruction, proprioceptive states, and
+6
+
+
+===== PAGE 7 =====
+
+Figure 3 Overview of the Language-Action dataset. The left panel summarizes the construction pipeline, which converts
+standard vision-language-action demonstrations into vision-agnostic atomic language-action episodes. The top-right
+panel visualizes representative Language-Action data examples using end-effector trajectories and gripper-direction
+arrows. The bottom-right panel reports the action-category distribution of the LA4-33K dataset.
+corresponding action trajectory for pretraining.
+We apply this pipeline to a large-scale robot manipulation dataset [10], resulting in LA4-33K, a dataset of 33K
+Language-Action episodes constructed without additional robot data collection. By reorganizing standard
+VLA demonstrations into explicit instruction-action pairs, LA4-33K exposes language-action supervision that
+is often implicit or diluted in full demonstration trajectories. Figure 3 summarizes the construction pipeline,
+visualized examples of LA data, and the action-category distribution of LA4-33K.
+4.2
+Dataset Construction Pipeline
+Pipeline overview. As shown in Figure 3(a), it illustrates how the original VLA data, consisting of visual
+observations, robot states, language instructions, and action trajectories, is reorganized into a Language-
+Action dataset of vision-agnostic atomic language-action episodes. For each demonstration, we first extract
+keyframe hints from robot states and define an atomic-action vocabulary that constrains the candidate action
+categories. These two sources of information are then combined with the original task description to build a
+structured prompt, which asks a VLM to propose temporal segments with primitive labels, vision-agnostic
+instructions, and temporal boundaries. The VLM-generated candidates are subsequently inspected through
+human verification, where low-quality or misaligned segments are filtered out. The retained segments form
+the final LA dataset, where each episode contains an atomic instruction, robot states, and the corresponding
+action trajectory, with visual observations removed for LA pretraining.
+Keyframe detection. We use temporal cues from the robot state trajectory to guide segmentation. Static
+keyframes mark short intervals with low arm-state variation and often correspond to alignment, grasping,
+placing, or phase transitions. Gripper-transition keyframes mark frames where the gripper changes between
+open and closed states, which commonly indicate grasp or release phases. These detected events are inserted
+into the segmentation prompt as timestamped hints. They are used as soft cues rather than fixed boundaries,
+7
+
+
+===== PAGE 8 =====
+
+allowing the segmentation model to combine robot-state signals with visual evidence when proposing atomic
+segments.
+Action categories. In parallel with keyframe detection, we define an atomic-action vocabulary that constrains
+the segmentation output. As summarized in Table 2, the vocabulary is organized by interaction context and
+motion type, covering common manipulation primitives such as grasp, place, lift, lower, transport, push, pull,
+press, move, rotate, and reorient. Each category is defined by the dominant physical effect of the segment,
+using end-effector motion, gripper state, object status, and contact context as cues. These categories provide
+the structured labels used in the prompt and help the VLM assign each candidate segment to a consistent
+action type before generating the corresponding vision-agnostic instruction.
+Table 2 Atomic action categories organized by interaction context and motion type.
+Object manipulation
+Contact interaction
+Free-space motion
+Gripper
+grasp / place
+–
+–
+Translation
+lift / lower / transport
+push / pull / press
+move
+Rotation
+wrist_rotate / reorient
+–
+rotate / reorient
+Prompt construction. For each demonstration, we build a structured prompt that includes the original
+task instruction, sampled multi-view video frames, detected keyframe events, the atomic-action vocabulary,
+primitive definitions, category assignment rules, and a required JSON output schema. The prompt asks the
+VLM to produce both a structured primitive label and a natural-language instruction for each segment. The
+instruction is written in a compact, vision-agnostic form, describing action type, direction, and optional object
+or object-state information while avoiding appearance and scene-specific details.
+VLM-based temporal segmentation. We use Qwen-3-VL-Plus [38] as a proposal generator for atomic temporal
+segmentation. Video frames are sampled at 2 FPS and resized to 224 × 224; when multiple camera views
+are available, each view is provided with a textual view label. Given the prompt and video inputs, the VLM
+outputs a JSON list of candidate segments, where each segment contains a primitive label, a vision-agnostic
+instruction, and start/end timestamps. In this stage, visual observations are used only to identify and describe
+candidate action segments during data construction, but are excluded from the resulting LA dataset.
+Human verification. The VLM-generated candidates are then filtered by human annotators. For each candidate
+segment, annotators inspect the corresponding video clip together with the primitive label and instruction,
+and evaluate whether the temporal boundary, action label, and language description are mutually consistent.
+Each segment receives a quality score from 0 to 3, and we retain segments with quality score at least 2. This
+step removes noisy proposals such as over-segmented clips, merged primitives, inaccurate boundaries, and
+instructions that do not match the observed action. The retained segments form the final LA dataset used for
+language-action pretraining. Additional implementation details of the construction pipeline are provided in
+Appendix A.
+4.3
+Dataset Statistics
+Applying the construction pipeline to DROID [10] yields LA4-33K. We next summarize its scale, granularity,
+verification quality, and action coverage.
+Scale and granularity. Table 3 summarizes how the data changes across processing phases during LA dataset
+construction. Starting from 9,560 original VLA episodes, VLM-based segmentation produces 56,899 candidate
+atomic language-action episodes. After human verification, 33,116 episodes are retained as the final LA
+dataset. Compared with the original vision-language-action episodes, the final LA episodes are much shorter
+on average, reducing the average number of frames per episode from 287.83 to 46.05. This makes language
+supervision temporally denser: instead of assigning one high-level instruction to a long visual trajectory,
+LA4-33K pairs short action segments with localized atomic instructions. In this way, LA4-33K converts sparse
+task-level language supervision into dense, localized language-action supervision that is more directly aligned
+with action execution.
+8
+
+
+===== PAGE 9 =====
+
+Table 3 Dataset scale and episode granularity during LA dataset construction.
+Processing Phase
+Episodes
+Frames
+Frames / Ep.
+Original VLA episodes
+9,560
+2,751,615
+287.83
+VLM-generated LA candidates
+56,899
+2,551,102
+44.84
+Final human-verified LA episodes
+33,116
+1,524,990
+46.05
+Verification quality. VLM-based segmentation produces 5.95 candidate atomic language-action episodes per
+original VLA episode on average. We retain segments that pass the predefined quality threshold, resulting in
+a candidate retention rate of 58.2%. Compared with the original 9,560 VLA episodes, the final LA dataset
+contains 3.46 times as many episodes. On a doubly annotated subset, inter-annotator agreement reaches
+Krippendorff’s α = 0.7794, indicating substantial consistency in the verification process. The full annotation
+and filtering protocol is described in Appendix A.
+Action coverage. Figure 3(c) reports the action-category distribution of LA4-33K. The final dataset covers
+frequent object-manipulation and free-space categories such as move, grasp, lift, transport, and place, while
+also retaining contact-interaction and rotational categories such as push, press, pull, rotate, and reorient.
+Overall, the distribution indicates that LA4-33K provides broad coverage of atomic manipulation behaviors
+for language-action pretraining.
+5
+LA4VLA: Language-Action Pretraining
+5.1
+Experimental Designs
+This section systematically evaluates language-action pretraining as a VLA learning paradigm, examining
+its downstream performance, integration with VLA pretraining, transferability, robustness, and effects on
+instruction-conditioned action prediction.
+Pretraining paradigms. We study a pretraining paradigm built around vision-agnostic language-action
+supervision for VLA policy learning. We use two paired pretraining data formats derived from the same
+atomic episodes. The first is LA4-33K, where visual observations are removed and each episode contains a
+vision-agnostic instruction, robot states, and the corresponding action trajectory. The second is LA-33K-V, a
+VLA-format counterpart of LA4-33K that restores the corresponding original visual observations for each
+atomic episode. Base directly finetunes the policy on downstream task data without pretraining. LA pretrains
+on LA4-33K without visual input before the same downstream finetuning stage. VLA pretrains on LA-33K-V
+with visual observations enabled, and then finetunes on the downstream task. LA-VLA first performs LA
+pretraining on LA4-33K, then performs VLA pretraining on LA-33K-V, and finally finetunes on downstream
+task data. MixPT jointly uses LA4-33K and LA-33K-V within a single mixed pretraining stage, followed by
+the same downstream finetuning.
+Questions and findings. The experiments address six questions:
+• Does language-action pretraining improve downstream performance? With identical downstream
+finetuning, LA-pretrained policies consistently achieve higher success rates than policies trained without
+pretraining or with VLA pretraining (Section 5.2).
+• How should LA supervision be combined with VLA pretraining? We compare pretraining only with
+language-action supervision (LA), pretraining first with language-action supervision and then with
+visual observations enabled (LA-VLA), and mixing language-action and vision-language-action data
+within one pretraining stage (MixPT). The results show that incorporating visual grounding after or
+together with language-action pretraining further strengthens downstream VLA policies (Section 5.3).
+• Does the benefit generalize across VLA architectures? We evaluate LA pretraining on another VLA
+architecture and observe consistent downstream gains, showing that language-action supervision can
+transfer across model architectures (Section 5.4).
+9
+
+
+===== PAGE 10 =====
+
+• Does the benefit extend to to real robots? On real-world language-conditioned manipulation tasks, LA
+pretraining leads to stronger real-world manipulation capability (Section 5.5).
+• Is the benefit robust to visual noise? Under visual perturbations, LA pretraining improves the policy’s
+robustness and preserves stronger manipulation capability when observations are degraded (Section 5.6).
+• Do the predicted actions follow the language instruction? Under controlled conflict settings, the
+LA-pretrained policy still predicts action directions that follow the instruction, and its action-decoding
+representations show clearer instruction-conditioned separation (Section 5.7).
+Experimental setup. We propose LA4VLA-1B, a 1B-parameter VLA model built on InternVL3-1B with a
+flow matching action head. We pretrain the model under the different paradigms described above. For LA-
+format batches, visual observations are masked out and the model predicts action trajectories from language
+instructions and robot states. For VLA-format batches and downstream finetuning, visual observations are
+enabled. For fair comparisons within each experiment group, we keep the model architecture, training budget,
+optimization hyperparameters, downstream data, and finetuning protocol fixed, changing only the pretraining
+paradigm under study.
+5.2
+Effect of Language-Action Pretraining
+We first evaluate whether language-action pretraining improves downstream manipulation performance.
+Table 4 reports results on MetaWorld [17] and LIBERO [18]. Results of prior methods are taken from their
+original papers or official reproductions reported in prior work.
+On MetaWorld, LA pretraining improves over both from-scratch finetuning and VLA pretraining, reaching
+83.00% average success compared with 79.78% for VLA pretraining and 69.73% for the Base policy. On
+LIBERO, the same ordering holds: LA pretraining reaches 95.30% average success, above the VLA-pretrained
+policy at 94.40% and the Base policy at 92.85%, in a benchmark where overall success rates are already high.
+These results show that vision-agnostic language-action supervision is more effective than VLA pretraining
+under the matched atomic-action pretraining setting. The gains are larger on MetaWorld, where the benchmark
+leaves more room for improvement, and remain visible on LIBERO despite stronger baseline performance. We
+next ablate how language-action supervision should be integrated with VLA pretraining.
+5.3
+Integrating Language-Action Supervision with VLA Pretraining
+We further study how language-action supervision should be combined with VLA pretraining. Table 4
+compares two pretraining paradigms: LA-VLA, which first performs LA pretraining and then VLA pretraining,
+and MixPT, which mixes LA and VLA data within a single pretraining stage. These two paradigms differ in
+how vision-agnostic language-action supervision and vision-language-action supervision are scheduled during
+pretraining.
+On MetaWorld, both integration paradigms improve over LA pretraining alone. LA-VLA increases the average
+success rate from 83.00% to 86.75%, while MixPT further improves it to 87.53%. On LIBERO, where baseline
+performance is already high, the same pattern remains: LA-VLA reaches 96.28% and MixPT reaches 95.75%,
+both above LA pretraining alone at 95.30%. These results indicate that language-action supervision is not only
+effective as a standalone pretraining signal, but can also be complemented by VLA pretraining. Sequential
+LA-VLA pretraining gives the best result on LIBERO, while MixPT gives the best result on MetaWorld,
+suggesting that both staged and mixed integration are effective ways to combine language-action learning
+with visual grounding.
+5.4
+Generalization to Different VLA Architectures
+We further investigate whether the benefits of LA pretraining transfer across VLA architectures. To this end,
+we apply the same LA pretraining protocol to StarVLA, another VLA architecture. We then finetune the
+LA-pretrained StarVLA and the no-pretraining StarVLA under the same downstream protocol and compare
+their final downstream performance, as shown in Table 4.
+10
+
+
+===== PAGE 11 =====
+
+Table 4 Downstream performance under different pretraining schemes. Success rates are reported in percent. The
+best and second-best values in each numeric column are marked in bold and underline, respectively. Reference results
+are taken from original papers or official reproductions reported in existing work.
+Model
+Pretrain
+Success Rate (%)
+Gain
+MetaWorld
+Easy
+Medium
+Hard
+Very Hard
+Avg.
+GR-1 [39]
+VLA
+76.6
+35.3
+46.0
+44.0
+50.5
+–
+SmolVLA [21]
+No
+87.1
+51.8
+70.0
+64.0
+68.2
+–
+RoboTron Mani [40]
+VLA
+85.5
+67.7
+76.7
+81.0
+77.7
+–
+Evo-1 [22]
+No
+89.2
+76.8
+77.2
+79.2
+80.6
+–
+π0.5 [41]
+Yes
+86.1
+78.2
+80.0
+82.0
+81.6
+–
+Evo-depth [6]
+No
+83.1
+84.7
+87.3
+82.4
+84.4
+–
+ALAM [42]
+VLA
+89.3
+83.6
+85.0
+82.0
+85.0
+–
+StarVLA [16]
+No
+85.7
+60.0
+40.6
+47.3
+58.39
++0.00
+StarVLA [16]
+LA
+85.1
+62.2
+55.0
+77.3
+69.91
++11.52
+LA4VLA-1B
+No
+82.5
+72.7
+41.7
+82.0
+69.73
++0.00
+LA4VLA-1B
+VLA
+88.6
+68.2
+68.3
+94.0
+79.78
++10.05
+LA4VLA-1B
+LA
+93.2
+81.8
+65.0
+92.0
+83.00
++13.27
+LA4VLA-1B
+LA-VLA
+91.4
+90.9
+66.7
+98.0
+86.75
++17.02
+LA4VLA-1B
+MixPT
+88.9
+94.5
+66.7
+100.0
+87.53
++17.80
+LIBERO
+Spatial
+Object
+Goal
+Long
+Avg.
+OpenVLA [1]
+VLA
+84.7
+88.4
+79.2
+53.7
+76.5
+–
+π0-FAST [23]
+VLA
+96.4
+96.8
+88.6
+60.2
+85.5
+–
+GR00T N1 [3]
+VLA
+94.4
+97.6
+93.0
+90.6
+93.9
+–
+π0 [2]
+VLA
+96.8
+98.8
+95.8
+85.2
+94.2
+–
+Evo-1 [22]
+No
+92.7
+97.7
+96.3
+92.3
+94.8
+–
+Evo-depth [6]
+No
+95.6
+99.2
+95.6
+91.3
+95.4
+–
+StarVLA [16]
+No
+96.4
+98.4
+95.8
+84.2
+93.70
++0.00
+StarVLA [16]
+LA
+97.4
+99.0
+96.0
+87.0
+94.85
++1.15
+LA4VLA-1B
+No
+87.8
+96.4
+96.4
+90.8
+92.85
++0.00
+LA4VLA-1B
+VLA
+93.2
+99.4
+96.8
+88.2
+94.40
++1.55
+LA4VLA-1B
+LA
+93.6
+98.6
+97.0
+92.0
+95.30
++2.45
+LA4VLA-1B
+MixPT
+93.4
+98.2
+98.0
+93.4
+95.75
++2.90
+LA4VLA-1B
+LA-VLA
+95.8
+97.4
+98.5
+93.4
+96.28
++3.43
+The StarVLA results show that LA pretraining brings gains on both benchmarks. On MetaWorld, the average
+success rate increases from 58.39% to 69.91%, a gain of 11.52 points. The improvement is especially large on
+the hard and very hard buckets, where success increases by 14.4 and 30.0 points, respectively. On LIBERO,
+the average success rate increases from 93.70% to 94.85%, a gain of 1.15 points, with the largest improvement
+on the long-horizon suite. These results show that language-action supervision can transfer across VLA
+architectures and consistently benefit downstream manipulation performance.
+5.5
+Real-World Manipulation Performance
+We further evaluate whether the benefits of LA pretraining extend to real-world manipulation. The experiments
+use an xArm6 arm with a parallel-jaw gripper and two RGB cameras, one wrist-mounted and one third-person.
+We design three language-conditioned tasks: pressing one of four buttons placed at different positions on the
+table, inserting a book into one of three shelf positions, and placing a drink into one of nine grid cells. In each
+task, the target button, shelf position, or grid cell is specified by the language instruction. Figure 4 shows
+representative rollouts of the three tasks.
+Within each task, the initial scene is shared across target goals. Therefore, the visual observation alone does
+not specify which target should be selected; the language instruction determines the intended button, shelf
+position, or grid cell. For each pretraining scheme, we finetune one multi-task policy using demonstrations
+from all three tasks, with 100 teleoperated demonstrations per task and 300 demonstrations in total. The
+same finetuned checkpoint is evaluated on all three tasks. We report per-task success rates and their average,
+with the full evaluation protocol and success criteria provided in Appendix B.
+11
+
+
+===== PAGE 12 =====
+
+Press Button
+Place Book
+Place Drink
+Figure 4 Real-world task execution on the xArm6 platform. Each row shows a representative rollout of one language-
+conditioned task, with frames ordered from left to right over the course of execution: Press Button (top), Place Book
+(middle), and Place Drink (bottom).
+Table 5 Real-world manipulation performance under different pretraining schemes. Success rates are reported in
+percent. Each task is evaluated with 20 trials per policy.
+Model
+Pretrain
+Press Button
+Place Book
+Place Drink
+Avg.
+Gain
+LA4VLA-1B
+No
+60.0
+15.0
+40.0
+38.3
++0.0
+LA4VLA-1B
+VLA
+50.0
+40.0
+55.0
+48.3
++10.0
+LA4VLA-1B
+LA
+85.0
+65.0
+95.0
+81.7
++43.4
+LA4VLA-1B
+MixPT
+75.0
+85.0
+90.0
+83.3
++45.0
+Table 5 shows that LA pretraining strengthens real-world manipulation ability. Averaged over the three
+tasks, LA4VLA-1B achieves 38.3% success without pretraining, while VLA pretraining improves performance
+to 48.3%. LA pretraining yields a much higher average success of 81.7%, with consistent gains across all
+three tasks. Combining LA and VLA pretraining via MixPT further improves performance to 83.3%. These
+results show that the benefits of language-action pretraining extend to real-world manipulation, substantially
+improving success rates over both no-pretraining and VLA-pretraining baselines, with further gains when
+combined with VLA pretraining through MixPT.
+5.6
+Robustness to Visual Perturbations
+The real-world evaluation above uses visual observations without artificial perturbations. We next test whether
+LA pretraining also helps when the visual input is degraded at test time. We reuse the same four finetuned
+real-world policies from the previous experiment and evaluate them with Gaussian noise added to the input
+images. These policies correspond to direct downstream finetuning without pretraining, VLA pretraining, LA
+pretraining, and MixPT. The evaluation is conducted on the Press Button and Place Drink tasks, with 20
+trials per task and policy. We use Gaussian noise with standard deviation 5 for Press Button and 15 for Place
+Drink, setting the noise level separately because the two tasks differ in their sensitivity to visual perturbations.
+Table 6 shows that LA pretraining improves robustness under degraded visual observations.
+Without
+pretraining, LA4VLA-1B achieves 27.5% average success, while VLA pretraining improves it to 42.5%. LA
+12
+
+
+===== PAGE 13 =====
+
+Table 6 Robustness of real-world policies under Gaussian image noise. Success rates are reported in percent. Each
+task is evaluated with 20 trials per policy.
+Model
+Pretrain
+Press Button
+Place Drink
+Avg.
+Gain
+LA4VLA-1B
+No
+40.0
+15.0
+27.5
++0.0
+LA4VLA-1B
+VLA
+20.0
+65.0
+42.5
++15.0
+LA4VLA-1B
+LA
+55.0
+80.0
+67.5
++40.0
+LA4VLA-1B
+MixPT
+65.0
+75.0
+70.0
++42.5
+Figure 5 Direction-following behavior and representation analysis of the LA-pretrained policy. Left panel: qualitative
+direction-following under the LA-pretrained and Conflicting-state conditions for a representative pair of opposite
+commands along the z axis. The top row shows predicted trajectories in the dy–dz plane, and the bottom row shows
+endpoint projections along the tested z axis. Right panel: t-SNE visualization of the policy representations before
+action decoding, colored by direction command. The VLA-trained policy maps different commands to mixed clusters,
+whereas the LA-pretrained policy forms clearer command-aligned clusters.
+pretraining further boosts performance to 67.5%, and MixPT achieves the best result at 70.0%. Compared
+with both no pretraining and VLA pretraining, LA and MixPT maintain substantially higher average success
+under visual noise. This shows that language-action pretraining remains beneficial when visual observations
+are degraded, especially when used alone or combined with VLA pretraining.
+5.7
+Instruction-Following Behavior and Representation Analysis
+We further analyze whether LA pretraining changes the policy’s instruction-following behavior and internal
+action representations. First, we apply the direction-following protocol and metrics from Section 3 to test
+whether the predicted action direction follows the language instruction. Second, we examine whether the
+internal representations used for action decoding distinguish different language instructions.
+Evaluation settings. The LA-pretrained policy predicts actions from the language instruction and robot
+state, with visual input masked. We evaluate two settings adapted from Section 3. In the LA-pretrained
+condition, the policy receives the original instruction and robot state from the LA training sample. In the
+Conflicting-state condition, only the instruction specifies the target direction, while the robot state is replaced
+by the state from a different atomic instruction-action pair whose action trajectory moves in the opposite
+direction. Since visual input is masked, the robot state is the only non-language input that can conflict with
+the instruction.
+Direction-following results. The left panels of Figure 5 visualize the predicted trajectories and endpoint
+projections under the LA-pretrained and Conflicting-state conditions for the same representative pair of
+opposite commands as in Section 3. Table 7 reports the corresponding directional metrics. Under the LA-
+pretrained condition, the policy predicts action directions that closely follow the instruction, achieving a DCS
+of 0.85 and a DAR of 0.99. The trajectories also show clear endpoint separation between opposite instructions,
+indicating reliable instruction-conditioned direction following without visual input. The Conflicting-state
+13
+
+
+===== PAGE 14 =====
+
+Table 7 Quantitative direction-following results of the LA-pretrained policy under masked visual input. Metrics are
+computed over 100 direction-following cases for each evaluation condition.
+Condition
+DAR ↑
+DCS ↑
+SR ↑
+SS ↑
+LA-pretrained
+0.99
+0.85
+1.46
+0.20
+Conflicting state
+0.95
+0.80
+1.41
+0.16
+condition further tests whether this behavior remains when the input robot state is replaced with the state
+from an instruction-action pair whose motion direction is opposite to the current instruction. In this setting,
+DCS remains high at 0.80, close to the LA-pretrained value of 0.85. This indicates that the predicted action
+direction follows the instruction rather than being dominated by the substituted robot state. Overall, these
+results show that LA pretraining yields more reliable instruction-conditioned direction following, even under
+the conflicting-state condition.
+Representation analysis. We next examine whether the direction-following results are reflected in the internal
+representations used for action prediction. For both policies, we extract the policy representations fed into
+the action head and project them with t-SNE. The representations are collected under masked visual input
+with the same robot states and direction instructions along the three Cartesian axes. The resulting t-SNE
+visualizations are shown in the right panels of Figure 5.
+The two policies organize this representation space differently. For the VLA-trained policy, the projected
+representations form many small clusters, each containing multiple command directions. This suggests that
+the representations are primarily grouped by robot state, while the instruction has only a weak effect on the
+representation used for action decoding. This is consistent with its weak direction following under the Visual-
+removed-input reference in Table 7. In contrast, the LA-pretrained policy forms clearer clusters aligned with
+the commanded directions, and opposite commands fall into distinct regions. This suggests that LA pretraining
+induces a more instruction-conditioned action representation, consistent with the direction-following results
+above.
+Taken together, the direction-following and representation results indicate that LA pretraining produces a
+policy whose predicted actions are more strongly conditioned on the language instruction. The policy predicts
+instruction-aligned directions without visual input, maintains this behavior when the input robot state is
+replaced with state information from an opposite-direction instruction-action pair, and forms action-decoding
+representations that are more clearly separated according to the instructed direction. These properties
+are obtained before downstream finetuning and provide behavioral and representational support for the
+downstream gains of policies with LA pretraining.
+6
+Conclusion
+We presented LA4VLA, a language-action pretraining framework for building robust Vision-Language-Action
+policies. Standard VLA pretraining jointly maps visual observations and language instructions to actions,
+which entangles visual grounding with action learning and dilute the supervision for learning how language
+constrains actions. LA4VLA addresses this issue by constructing vision-agnostic atomic instruction-action
+pairs from existing robot demonstrations and using them for language-action pretraining. This process yields
+LA4-33K, a 33K-episode Language-Action dataset derived without additional robot data collection. By
+removing visual observations during LA pretraining while preserving action supervision, the policy learns how
+language constrains action execution and acquires reusable language-conditioned action priors that support
+downstream VLA learning. Across simulation benchmarks and real-world manipulation tasks, LA pretraining
+consistently strengthens downstream VLA policies, outperforms VLA-only pretraining under comparable
+settings, and provides additional gains when combined with standard VLA training. The benefits transfer
+across VLA architectures and are especially evident under visual perturbations. Overall, our findings highlight
+the importance of making language-action supervision explicit rather than leaving it entangled within joint
+vision-language-action training.
+14
+
+
+===== PAGE 15 =====
+
+References
+[1] Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael Rafailov,
+Ethan Foster, Grace Lam, Pannag Sanketi, et al. Openvla: An open-source vision-language-action model. arXiv
+preprint arXiv:2406.09246, 2024.
+[2] Kevin Black, Noah Brown, Danny Driess, Adnan Esmail, Michael Equi, Chelsea Finn, Niccolo Fusai, Lachy
+Groom, Karol Hausman, Brian Ichter, et al. π0: A vision-language-action flow model for general robot control.
+corr, abs/2410.24164, 2024. doi: 10.48550. arXiv preprint ARXIV.2410.24164.
+[3] Johan Bjorck, Fernando Castañeda, Nikita Cherniadev, Xingye Da, Runyu Ding, Linxi Fan, Yu Fang, Dieter Fox,
+Fengyuan Hu, Spencer Huang, et al. Gr00t n1: An open foundation model for generalist humanoid robots. arXiv
+preprint arXiv:2503.14734, 2025.
+[4] Qiuyue Wang, Mingsheng Li, Jian Guan, Jinhui Ye, Sicheng Xie, Yitao Liu, Junhao Chen, Zhixuan Liang, Jie
+Zhang, Xintong Hu, et al. Qwen-vla: Unifying vision-language-action modeling across tasks, environments, and
+robot embodiments. arXiv preprint arXiv:2605.30280, 2026.
+[5] Tao Lin, Gen Li, Yilei Zhong, Yanwen Zou, Yuxin Du, Jiting Liu, Encheng Gu, and Bo Zhao. Evo-0: Vision-
+language-action model with implicit spatial understanding. arXiv preprint arXiv:2507.00416, 2025.
+[6] Tao Lin, Yuxin Du, Jiting Liu, Nuobei Zhu, Yunhe Li, Yuqian Fu, Yinxinyu Chen, Hongyi Cai, Zewei Ye,
+Bing Cheng, et al. Evo-depth: A lightweight depth-enhanced vision-language-action model. arXiv preprint
+arXiv:2605.14950, 2026.
+[7] Runze Wang, Yuqian Fu, Yu Li, Tao Lin, Tianwen Qian, Mohamed Elhoseiny, Bo Zhao, Yanwei Fu, Yu-Gang
+Jiang, and Xiangyang Xue. Afford-vla: Action-aligned visual planning via internalized affordance. arXiv preprint
+arXiv:2605.24203, 2026.
+[8] Kuanning Wang, Ke Fan, Chenhao Qiu, Zeyu Shangguan, Yuqian Fu, Yanwei Fu, Daniel Seita, and Xiangyang
+Xue. Oflow: Injecting object-aware temporal flow matching for robust robotic manipulation. arXiv preprint
+arXiv:2604.17876, 2026.
+[9] Kuangji Zuo, Gen Li, Bofan Lyu, Yanshuo Lu, Boyu Ma, Shijia Han, Xinyu Zhou, Xichen Yuan, Chuhao Zhou,
+Jiaqi Bai, et al. Gaze2act: Gaze-conditioned vision-language-action policies for interactive robot manipulation.
+arXiv preprint arXiv:2605.30282, 2026.
+[10] Alexander Khazatsky, Karl Pertsch, Suraj Nair, Ashwin Balakrishna, Sudeep Dasari, Siddharth Karamcheti,
+Soroush Nasiriany, Mohan Kumar Srirama, Lawrence Yunliang Chen, Kirsty Ellis, et al. Droid: A large-scale
+in-the-wild robot manipulation dataset. arXiv preprint arXiv:2403.12945, 2024.
+[11] Abby O’Neill, Abdul Rehman, Abhiram Maddukuri, Abhishek Gupta, Abhishek Padalkar, Abraham Lee, Acorn
+Pooley, Agrim Gupta, Ajay Mandlekar, Ajinkya Jain, et al. Open x-embodiment: Robotic learning datasets
+and rt-x models: Open x-embodiment collaboration 0. In 2024 IEEE International Conference on Robotics and
+Automation (ICRA), pages 6892–6903. IEEE, 2024.
+[12] Homer Rich Walke, Kevin Black, Tony Z Zhao, Quan Vuong, Chongyi Zheng, Philippe Hansen-Estruch, An-
+dre Wang He, Vivek Myers, Moo Jin Kim, Max Du, et al. Bridgedata v2: A dataset for robot learning at scale.
+In Conference on Robot Learning, pages 1723–1736. PMLR, 2023.
+[13] Haoquan Fang, Jiafei Duan, Donovan Clay, Sam Wang, Shuo Liu, Weikai Huang, Xiang Fan, Wei-Chuan Tsai,
+Shirui Chen, Yi Ru Wang, et al. Molmoact2: Action reasoning models for real-world deployment. arXiv preprint
+arXiv:2605.02881, 2026.
+[14] Kechun Xu, Zhenjie Zhu, Anzhe Chen, Shuqi Zhao, Qing Huang, Yifei Yang, Haojian Lu, Rong Xiong, Masayoshi
+Tomizuka, and Yue Wang. Seeing to act, prompting to specify: A bayesian factorization of vision language action
+policy. arXiv preprint arXiv:2512.11218, 2025.
+[15] Yu Fang, Yuchun Feng, Dong Jing, Jiaqi Liu, Yue Yang, Zhenyu Wei, Daniel Szafir, and Mingyu Ding. When vision
+overrides language: Evaluating and mitigating counterfactual failures in vlas. arXiv preprint arXiv:2602.17659,
+2026.
+[16] StarVLA Community. Starvla: A lego-like codebase for vision-language-action model developing. arXiv preprint
+arXiv:2604.05014, 2026.
+15
+
+
+===== PAGE 16 =====
+
+[17] Tianhe Yu, Deirdre Quillen, Zhanpeng He, Ryan Julian, Karol Hausman, Chelsea Finn, and Sergey Levine.
+Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning. In Conference on robot
+learning, pages 1094–1100. PMLR, 2020.
+[18] Bo Liu, Yifeng Zhu, Chongkai Gao, Yihao Feng, Qiang Liu, Yuke Zhu, and Peter Stone. Libero: Benchmarking
+knowledge transfer for lifelong robot learning. Advances in Neural Information Processing Systems, 36:44776–
+44791, 2023.
+[19] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Joseph Dabis, Chelsea Finn, Keerthana
+Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine Hsu, et al. Rt-1: Robotics transformer for real-world
+control at scale. arXiv preprint arXiv:2212.06817, 2022.
+[20] Brianna Zitkovich, Tianhe Yu, Sichun Xu, Peng Xu, Ted Xiao, Fei Xia, Jialin Wu, Paul Wohlhart, Stefan
+Welker, Ayzaan Wahid, et al. Rt-2: Vision-language-action models transfer web knowledge to robotic control. In
+Conference on Robot Learning, pages 2165–2183. PMLR, 2023.
+[21] Mustafa Shukor, Dana Aubakirova, Francesco Capuano, Pepijn Kooijmans, Steven Palma, Adil Zouitine, Michel
+Aractingi, Caroline Pascal, Martino Russi, Andres Marafioti, et al. Smolvla: A vision-language-action model for
+affordable and efficient robotics. arXiv preprint arXiv:2506.01844, 2025.
+[22] Tao Lin, Yilei Zhong, Yuxin Du, Jingjing Zhang, Jiting Liu, Yinxinyu Chen, Encheng Gu, Ziyan Liu, Hongyi
+Cai, Yanwen Zou, et al. Evo-1: Lightweight vision-language-action model with preserved semantic alignment. In
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 13397–13406, 2026.
+[23] Karl Pertsch, Kyle Stachowicz, Brian Ichter, Danny Driess, Suraj Nair, Quan Vuong, Oier Mees, Chelsea
+Finn, and Sergey Levine. Fast: Efficient action tokenization for vision-language-action models. arXiv preprint
+arXiv:2501.09747, 2025.
+[24] Jindou Jia, Gen Li, Xiangyu Chen, Tuo An, Yuxuan Hu, Jingliang Li, Xinying Guo, and Jianfei Yang. A2a:
+Action-to-action flow matching policy. In Proceedings of Robotics: Science and Systems, 2026.
+[25] Yuxin Du, Tao Lin, Zile Zhong, Runting Li, Xiyao Chen, Jiting Liu, Chenglin Liu, Ying-Cong Chen, Yuqian Fu,
+and Bo Zhao. Focusable monocular depth estimation. arXiv preprint arXiv:2605.11756, 2026.
+[26] Ziyan Liu, Yeqiu Chen, Hongyi Cai, Tao Lin, Shuo Yang, Zheng Liu, and Bo Zhao. Vla-pruner: Temporal-aware
+dual-level visual token pruning for efficient vision-language-action inference. arXiv preprint arXiv:2511.16449,
+2025.
+[27] Eric Jang, Alex Irpan, Mohi Khansari, Daniel Kappler, Frederik Ebert, Corey Lynch, Sergey Levine, and Chelsea
+Finn. Bc-z: Zero-shot task generalization with robotic imitation learning. In conference on Robot Learning, pages
+991–1002. PMLR, 2022.
+[28] Corey Lynch, Ayzaan Wahid, Jonathan Tompson, Tianli Ding, James Betker, Robert Baruch, Travis Armstrong,
+and Pete Florence. Interactive language: Talking to robots in real time. IEEE Robotics and Automation Letters,
+2023.
+[29] Mohit Shridhar, Lucas Manuelli, and Dieter Fox. Cliport: What and where pathways for robotic manipulation.
+In Conference on robot learning, pages 894–906. PMLR, 2022.
+[30] Michael Ahn, Anthony Brohan, Noah Brown, Yevgen Chebotar, Omar Cortes, Byron David, Chelsea Finn,
+Chuyuan Fu, Keerthana Gopalakrishnan, Karol Hausman, et al. Do as i can, not as i say: Grounding language in
+robotic affordances. arXiv preprint arXiv:2204.01691, 2022.
+[31] Jacky Liang, Wenlong Huang, Fei Xia, Peng Xu, Karol Hausman, Brian Ichter, Pete Florence, and Andy Zeng.
+Code as policies: Language model programs for embodied control. In 2023 IEEE International conference on
+robotics and automation (ICRA), pages 9493–9500. IEEE, 2023.
+[32] Qingqing Zhao, Yao Lu, Moo Jin Kim, Zipeng Fu, Zhuoyang Zhang, Yecheng Wu, Zhaoshuo Li, Qianli Ma,
+Song Han, Chelsea Finn, et al. Cot-vla: Visual chain-of-thought reasoning for vision-language-action models. In
+Proceedings of the Computer Vision and Pattern Recognition Conference, pages 1702–1713, 2025.
+[33] Lucy Xiaoyang Shi, Brian Ichter, Michael Equi, Liyiming Ke, Karl Pertsch, Quan Vuong, James Tanner, Anna
+Walling, Haohuan Wang, Niccolo Fusai, et al. Hi robot: Open-ended instruction following with hierarchical
+vision-language-action models. arXiv preprint arXiv:2502.19417, 2025.
+16
+
+
+===== PAGE 17 =====
+
+[34] Gen Li, Bo Zhao, Jianfei Yang, and Laura Sevilla-Lara. Mask2iv: Interaction-centric video generation via mask
+trajectories. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 40, pages 6091–6099, 2026.
+[35] Ruaridh Mon-Williams, Gen Li, Ran Long, Wenqian Du, and Christopher G Lucas. Embodied large language
+models enable robots to complete complex tasks in unpredictable environments. Nature Machine Intelligence,
+7(4):592–601, 2025.
+[36] Lihan Zha, Asher J Hancock, Mingtong Zhang, Tenny Yin, Yixuan Huang, Dhruv Shah, Allen Z Ren, and
+Anirudha Majumdar. Lap: Language-action pre-training enables zero-shot cross-embodiment transfer. arXiv
+preprint arXiv:2602.10556, 2026.
+[37] Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie
+Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal
+models. arXiv preprint arXiv:2504.10479, 2025.
+[38] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding,
+Chang Gao, Chunjiang Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025.
+[39] Hongtao Wu, Ya Jing, Chilam Cheang, Guangzeng Chen, Jiafeng Xu, Xinghang Li, Minghuan Liu, Hang Li, and
+Tao Kong. Unleashing large-scale video generative pre-training for visual robot manipulation. In International
+Conference on Learning Representations, volume 2024, pages 10641–10662, 2024.
+[40] Feng Yan, Fanfan Liu, Liming Zheng, Yufeng Zhong, Yiyang Huang, Zechao Guan, Chengjian Feng, and Lin Ma.
+Robotron-mani: All-in-one multimodal large model for robotic manipulation. arXiv preprint arXiv:2412.07215,
+2024.
+[41] Physical Intelligence, Kevin Black, Noah Brown, James Darpinian, Karan Dhabalia, Danny Driess, Adnan
+Esmail, Michael Equi, Chelsea Finn, Niccolo Fusai, et al. π0.5: A vision-language-action model with open-world
+generalization. arXiv preprint arXiv:2504.16054, 2025.
+[42] Zuojin Tang, Haoyun Liu, Xinyuan Chang, Changjie Wu, Dongjie Huo, Yandan Yang, Bin Liu, Zhejia Cai, Feng
+Xiong, Mu Xu, et al. Alam: Algebraically consistent latent transitions for vision-language-action models. arXiv
+preprint arXiv:2605.10819, 2026.
+17
+
+
+===== PAGE 18 =====
+
+Appendix
+A
+LA Dataset Construction Details
+This appendix complements the dataset construction pipeline described in Section 4. The main text presents
+the overall flow from original VLA data to the final LA dataset. Here we provide the implementation details
+for keyframe detection, atomic-action design criteria, prompt construction, VLM-based temporal segmentation,
+primitive definitions, and human verification.
+A.1
+Keyframe Detection
+Purpose. Keyframes provide temporal cues that can assist the segmentation model in identifying candidate
+atomic-action phases. We use them as auxiliary hints in the segmentation prompt: gripper transition frames
+often correspond to grasp or release/place phases, while static frames indicate near-stationary intervals that
+commonly occur around alignment, grasping, placing, or phase transitions.
+Static keyframes. Static keyframes mark short intervals in which the arm-state variation remains low. Given
+an episode state trajectory {st}T
+t=1, where st denotes the robot state at frame t, we remove the scalar gripper
+channel and compute adjacent-frame arm-state differences,
+∆st = sarm
+t+1 −sarm
+t
+.
+Subsequently, the obtained sequences are smoothed via Savitzky-Golay filter and normalized, and then
+aggregated into a scalar motion magnitude mt via mean absolute value. A frame is treated as a static
+candidate when mt falls below an adaptive threshold θs = rs · median(m). For window-based detection, we
+also require that a sufficient proportion of frames within the local window satisfy this low-motion condition.
+Consecutive static candidates are merged, and the midpoint of each merged interval is used as the static
+keyframe. In our default setting, we use a Savitzky–Golay filter with window length 7 and polynomial order 3,
+symmetric min-max normalization, weighted-mean aggregation, rs = 0.5, window size 5, and rw = 0.8.
+Gripper transition keyframes. Gripper transition keyframes mark frames where the gripper changes between
+open and closed states. We detect these transitions from the scalar gripper channel gt. After min-max
+normalization, we scan the trajectory with a local temporal window. For each candidate frame t, we compare
+the mean gripper values before and after the frame, denoted as ¯g−
+t and ¯g+
+t , respectively. A frame is selected
+as a transition keyframe if the two window means straddle the gripper threshold θg — i.e., ¯g−
+t < θg < ¯g+
+t
+or ¯g+
+t < θg < ¯g−
+t . The resulting event is then labeled as either gripper-open or gripper-close, following the
+dataset’s specific convention for gripper states (e.g., whether 0 indicates open or closed). In our default setting,
+we use θg = 0.8 and a window size of n = 3 frames on each side. Transition events closer than 2n frames are
+filtered to reduce duplicates caused by noise.
+Algorithm. The resulting detector combines low-motion intervals and gripper-state transitions:
+Prompt formatting. Detected keyframes are inserted into the VLM prompt as timestamped state events, for
+example:
+- 1.20s:
+static
+- 1.80s:
+gripper_close
+- 3.40s:
+gripper_open
+These events are provided as temporal hints for segmentation rather than hard boundaries, allowing the VLM
+to jointly use robot-state cues and visual evidence when determining segment boundaries.
+A.2
+Atomic-Action Design Criteria
+Design criteria. Table 2 in the main text summarizes the high-level atomic-action taxonomy. The taxonomy
+is designed to define short segments that support language-action supervision and is guided by three criteria:
+• Local temporal boundary. Each segment should cover a short contiguous time interval and avoid
+spanning multiple task phases.
+18
+
+
+===== PAGE 19 =====
+
+Algorithm 1 Keyframe detection from robot state trajectories
+Require: Robot state trajectory s1:T and timestamps τ1:T
+Ensure: Sorted keyframe list K
+1: Split s1:T into arm states sarm
+1:T and gripper states g1:T
+2: Compute arm-state differences ∆st = sarm
+t+1 −sarm
+t
+3: Smooth ∆st via Savitzky-Golay filter and normalize it
+4: Aggregate ∆st into scalar motion magnitude mt
+5: Select static candidates whose local-window motion magnitude remains below θs
+6: Merge consecutive static candidates and keep the midpoint of each merged interval
+7: Normalize g1:T and compare before/after window means around each candidate frame
+8: Select gripper-transition candidates whose window means straddle the gripper threshold θg
+9: Remove duplicate gripper-transition candidates within 2n frames
+10: Convert retained frame indices to timestamps and sort them into K
+11: return K
+• Observable physical change. Each primitive should correspond to a meaningful change in robot-object
+interaction, object pose, gripper status, or end-effector pose.
+• Trajectory-grounded instruction. Each instruction should correspond to a motion pattern that can be
+inferred from the observed trajectory.
+These criteria define the atomic-action vocabulary and guide both VLM-based segmentation and human
+verification.
+A.3
+Prompt Construction Details
+Prompt components. The prompt guides the VLM to identify short atomic segments with structured labels
+and vision-agnostic instructions. It includes the original task description, sampled multi-view video frames,
+keyframe events, the atomic-action vocabulary, primitive definitions, category assignment rules, and the
+required JSON output schema. The prompt also instructs the VLM to jointly reason over all available views.
+Design goals. The prompt serves three roles in dataset construction. First, it reduces label drift by constraining
+outputs to a predefined atomic-action taxonomy. Second, it demonstrates the division of atomic actions at
+different granularities, including relatively short gripper actions, relatively long transport or reorient actions,
+and composite actions. Third, it requires both a structured action label and a natural-language instruction.
+The instruction is written in a vision-agnostic form, describing action type, direction, and optional object or
+object-status information, while avoiding object identity, appearance, material, and environmental details.
+This format supports LA pretraining where visual input is masked.
+Keyframe constraints. Keyframes provide temporal cues for identifying atomic-action boundaries. Gripper
+open/close events indicate likely manipulation transitions, while static keyframes often correspond to alignment,
+grasping, placing, or phase transitions. These cues are used as soft hints together with visual observations
+when determining segment boundaries.
+Prompt template. The following abbreviated template summarizes the segmentation input structure:
+19
+
+
+===== PAGE 20 =====
+
+Task context: original long-horizon task description and sampled multi-view video frames.
+Action vocabulary: grasp, place, lift, lower, transport, wrist_rotate, reorient, push, pull, press,
+move, rotate, and wait.
+Object-status tags: HOLDING and EMPTY, depending on whether an object is held by the
+gripper.
+Primitive definitions: specific definitions and descriptions of different action primitives
+Keyframe cues: timestamped static, gripper-open, and gripper-close events.
+Instruction rules: describe action type, direction, and optional object-status information while
+avoiding object identity and appearance details.
+Output fields: subaction, instruction, start, and end in JSON format.
+Granularity examples: decomposition examples such as decompose place cup into move →grasp
+→lift →transport →place.
+A.4
+VLM-based Temporal Segmentation
+Model and inputs. We use Qwen-3-VL-Plus to propose temporal segments for each long-horizon demonstration.
+Video frames are sampled at 2 FPS and resized to 224 × 224. When multiple camera views are available, each
+view is provided as a separate video stream with an associated textual view label. The VLM is provided with
+the original task description, the segmentation prompt, and formatted keyframe events as additional temporal
+cues.
+Output format. The VLM outputs a JSON list of candidate atomic-action segments. Each segment contains a
+structured primitive label, a vision-agnostic instruction, and start/end timestamps:
+[
+{
+"subaction":
+"lift",
+"instruction":
+"lift the object upward while holding it",
+"start":
+3.50,
+"end":
+5.00
+}
+]
+We use structured JSON outputs with a sampling temperature of 0.2 to improve consistency. Failed or
+malformed outputs are automatically retried.
+Proposal generation. The VLM is used as a proposal generator for candidate temporal segmentation. It
+integrates visual observations, task context, keyframe cues, and taxonomy constraints to produce initial
+segment proposals. These proposals are subsequently filtered and refined through human verification and
+quality control before being included in the final LA dataset.
+Cost Analysis. Segmenting 1/10 of the DROID dataset (9,560 episodes) with Qwen-3-VL-Plus incurred a
+token consumption of 44.29M input tokens and 3.385M output tokens. On average, each episode required
+4.633K input tokens and 0.354K output tokens, demonstrating the cost feasibility of using a VLM for dataset
+segmentation.
+A.5
+Primitive Definitions
+The specific definitions of the action primitives are provided in Table 8, and visualizations of more atomic
+actions are provided in Figure 6. Further details are elaborated below.
+Definition convention. We characterize each primitive by its dominant physical effect within an atomic segment,
+using end-effector motion, gripper state, object status, and contact mode as cues. For directional translations,
+we adopt a robot base-frame convention: +x denotes forward, −x backward, +y left, −y right, and +z upward,
+while −z denotes downward. Under this convention, primitives such as transport and move are annotated
+with respect to base-frame directions.
+20
+
+
+===== PAGE 21 =====
+
+0.35
+0.5
+x
+-0.2
+-0.05
+0.1
+y
+0.1
+0.25
+0.4
+z
+forward
+lower
+Lower the object downward toward the target
+while holding it
+0.25
+0.4
+0.55
+x
+0
+0.15
+0.3
+0.45
+y
+0.1
+0.25
+0.4
+0.55
+z
+forward
+reorient
+Maintain grasp and tilt the object downward
+to pour
+0.56
+0.62
+0.68
+x
+0.1
+0.16
+0.22
+0.28
+y
+0.02
+0.08
+0.14
+0.2
+z
+forward
+push
+Push the object sideways while holding
+nothing
+0.34
+0.4
+0.46
+x
+0.16
+0.22
+0.28
+y
+0.42
+0.48
+0.54
+z
+forward
+lift
+Lift the object vertically upward while
+holding it
+0.25
+0.4
+0.55
+x
+-0.15
+0
+0.15
+0.3
+y
+0.4
+0.55
+0.7
+0.85
+z
+forward
+transport (right)
+Transport the object to the right while
+holding it
+0.42
+0.45
+0.48
+x
+-0.03
+0
+0.03
+0.06
+y
+0.17
+0.2
+0.23
+0.26
+z
+forward
+press
+Apply pressure to the left-side object while
+holding nothing
+0.592
+0.598
+0.604
+x
+0.022
+0.028
+0.034
+0.04
+y
+0.54
+0.546
+0.552
+z
+forward
+grasp
+Close gripper to grasp the object
+0.45
+0.48
+0.51
+0.54
+x
+0.05
+0.08
+0.11
+0.14
+y
+0.58
+0.61
+0.64
+0.67
+z
+forward
+pull
+Pull the top right object while holding
+nothing
+0.43
+0.445
+x
+-0.085
+-0.07
+-0.055
+y
+0.265
+0.28
+0.295
+z
+forward
+place
+Open gripper to release and place the object
+onto the target surface
+start
+end
+EEF trajectory over time
+gripper direction
+open
+closed
+Figure 6 The visualization of more action primitives
+Dominant primitive rule. Real robot demonstrations may contain overlapping motion patterns. For example, a
+segment may involve both transport and minor reorientation, or short alignment motions before grasping.
+In such cases, we assign a single dominant primitive label based on the primary physical effect, while the
+natural-language instruction may additionally describe secondary effects when relevant. For instance, a
+segment with primarily horizontal displacement is labeled as transport and may be described as "transport
+the object left while keeping it upright." Similarly, a grasp segment may include a short alignment phase and
+be described as "align with and grasp the object."
+Rotational primitives. Rotational actions are represented either as axis-aligned rotations or target-oriented
+reorientation, depending on which description better reflects the trajectory. Wrist-axis rotations applied to
+a held object are denoted as wrist_rotate, while orientation-changing actions are denoted as reorient, e.g.,
+upright, flat, vertical, or horizontal.
+21
+
+
+===== PAGE 22 =====
+
+Table 8 Primitive definitions and typical motion patterns in the LA dataset.
+Primitive
+Definition and Typical Motion Pattern
+grasp
+Align with a target object and close the gripper to establish a grasp.
+place / release
+Move a held object to a target pose or support region and open the gripper.
+lift
+Move a held object primarily along +z.
+lower
+Move a held object primarily along −z.
+transport
+Move a held object in the horizontal plane along base-frame directions.
+wrist_rotate
+Rotate a held object around the tool axis (clockwise or counterclockwise).
+reorient
+Adjust a held object’s orientation toward a target state (e.g., upright, flat).
+push
+Apply contact-based motion to move an object away from the end effector.
+pull
+Apply contact-based motion to move an object toward the end effector.
+press
+Apply downward contact force to activate or depress a target.
+move
+Move the empty gripper in free space using base-frame directions.
+rotate_free
+Rotate the empty gripper in free space around its axis.
+reorient_free
+Adjust the empty gripper orientation toward a target state.
+A.6
+Human Verification Protocol
+Annotation target. Human verification is applied to the VLM-generated candidate atomic-action segments
+before they are included in the LA dataset. For each candidate, annotators inspect the corresponding video
+segment together with the structured subaction label and the generated instruction. They evaluate whether
+the temporal boundary, action label, and instruction are mutually consistent. This step filters noisy VLM
+proposals, including over-segmented clips, merged primitives, imprecise boundaries, and instructions that are
+not well aligned with the observed action.
+Quality score. Each segment receives a quality score from 0 to 3, as shown in Table 9. The score measures
+whether the segment is suitable for LA dataset training in terms of temporal boundary quality, action-label
+correctness, and language-action alignment.
+Table 9 Quality score used for human verification.
+Score
+Meaning
+Interpretation
+0
+Unusable
+The segment is severely misaligned or does not contain a meaningful atomic
+action.
+1
+Low quality
+The segment contains relevant motion but the boundary, label, or instruc-
+tion is too noisy for reliable training.
+2
+Acceptable
+The segment is mostly correct and useful for training with minor imperfec-
+tions.
+3
+High quality
+The segment, subaction label, and instruction are well aligned.
+Confidence score. Annotators also provide a confidence score from 0 to 2, as shown in Table 10. This score
+records annotator certainty in the quality judgment and is used to monitor ambiguous cases and annotation
+reliability. It is not used in the final filtering stage. The average confidence score is 1.97, indicating generally
+high annotator certainty.
+Table 10 Confidence score recorded during human verification.
+Score
+Level
+Interpretation
+0
+Low
+The segment is ambiguous or difficult to assess.
+1
+Medium
+The annotator can assess the segment but some uncertainty remains.
+2
+High
+The annotator is confident in the quality judgment.
+22
+
+
+===== PAGE 23 =====
+
+Agreement evaluation. To evaluate annotation consistency, 10% of the generated segments are annotated by
+at least two annotators. We measure inter-annotator agreement using Krippendorff’s alpha on an interval
+scale and obtain α = 0.7794. This result suggests a reasonably consistent level of agreement across annotators
+for the verification task.
+Filtering rule. The cleaned LA dataset retains segments with quality score at least 2 and discards segments
+with quality score below 2. For samples annotated by multiple annotators, we use the average quality score
+for filtering. Thus, retained segments must be rated at least acceptable in terms of temporal boundary quality,
+action-label correctness, and language-action alignment. This rule removes low-quality VLM proposals while
+preserving segments suitable for LA dataset training.
+B
+Real-World Experimental Setup
+Platform. The real-world experiments use a UFactory xArm6 arm with a parallel-jaw gripper. The policy
+receives two RGB camera views, one from a wrist-mounted camera and one from a third-person camera.
+Tasks. We design three language-conditioned manipulation tasks. In Press Button, four buttons are placed at
+different positions on the table, and the policy must press the button specified by the instruction. In Place
+Book, the policy must insert a book into one of three shelf positions specified by the instruction. In Place
+Drink, the policy must place a drink into the cell of a 3 × 3 grid specified by the instruction. Within each
+task, the initial scene and observation are shared across target goals, so the visual input cannot disambiguate
+the target and the instruction alone determines which goal to execute.
+Demonstrations and training. We collect 100 teleoperated demonstrations per task, 300 in total. The two
+compared policies are finetuned on the same demonstrations under the same protocol, and each policy uses a
+single multi-task checkpoint that is evaluated on all three tasks.
+Evaluation protocol. In Press Button, the four target buttons are evaluated in a fixed cyclic order: top-right,
+bottom-right, bottom-left, and top-left, repeated for 5 rounds, giving 20 trials in total. In Place Book, the
+three shelf positions are tested 7, 6, and 7 times, giving 20 trials. In Place Drink, four target cells are each
+evaluated 5 times, giving 20 trials. Each trial is capped by a step limit of 800 low-level control steps for Press
+Button, 1,200 for Place Book, and 1,000 for Place Drink; for example, with an action horizon of 25, 800 steps
+correspond to approximately 32 action chunks.
+Success criteria. Press Button counts as a success if the commanded button is pressed at least once within
+the step limit, and as a failure otherwise. Place Book counts as a success if the book is inserted to at least
+half of the shelf depth. Place Drink counts as a success if the drink is placed into the commanded cell in an
+upright and stable configuration without tipping over within the step limit. Prematurely opening the gripper,
+causing the drink to spill, is also considered a failure.
+C
+Metrics for Instruction Following Analysis
+Notations. The evaluation set is denoted as
+D = {(yi, ˆpi, gi, ui)}N
+i=1,
+where yi ∈Y is the instruction direction label, ˆpi ∈R3 is the predicted endpoint displacement, gi ∈R3
+is the ground-truth endpoint displacement under the corresponding instruction, and ui ∈R3 is the unit
+vector corresponding to the instruction-specified canonical direction. For example, ui = (1, 0, 0) for x+ and
+ui = (−1, 0, 0) for x−. The endpoint displacements are obtained by summing translational increments over
+the prediction horizon:
+ˆpi =
+T
+X
+t=1
+∆ˆxi,t,
+gi =
+T
+X
+t=1
+∆xGT
+i,t .
+Directional Alignment Rate (DAR). DAR measures the fraction of trials whose predicted endpoint displacement
+23
+
+
+===== PAGE 24 =====
+
+lies in the half-space aligned with the canonical instruction direction:
+DAR = 1
+N
+N
+X
+i=1
+I
+ˆp⊤
+i ui > 0
+
+.
+Direction Consistency Score (DCS). DCS measures the cosine similarity between the predicted endpoint
+displacement and the ground-truth endpoint displacement:
+DCS = 1
+N
+N
+X
+i=1
+ˆp⊤
+i gi
+∥ˆpi∥2 ∥gi∥2
+.
+Since gi is collected under the corresponding instruction, DCS evaluates whether the predicted motion follows
+the instruction-conditioned demonstrated direction. In implementation, trials with near-zero predicted or
+ground-truth displacement norm are assigned a cosine value of 0.
+Separability Ratio (SR). SR compares two quantities: the average distance between predictions with different
+instruction labels, and the average distance between predictions with the same instruction label. For each
+instruction label k ∈Y, let
+Ik = {i : yi = k}
+be the indices of trials labeled as direction k.
+First compute the average within-direction distance by averaging pairwise distances within each direction
+label and then averaging over direction labels:
+dintra =
+1
+|Y|
+X
+k∈Y
+2
+|Ik|(|Ik| −1)
+X
+i,j∈Ik
+i<j
+∥ˆpi −ˆpj∥2.
+Then compute the average between-direction distance by averaging pairwise distances for each direction pair
+and then averaging over direction pairs:
+dinter =
+2
+|Y|(|Y| −1)
+X
+a,b∈Y
+a<b
+1
+|Ia||Ib|
+X
+i∈Ia
+X
+j∈Ib
+∥ˆpi −ˆpj∥2.
+Here a < b simply means that each pair of different direction labels is counted once. The separability ratio is
+then defined as follows, and here ϵ denotes a small positive constant used for numerical stability:
+SR =
+dinter
+dintra + ϵ.
+A higher ratio means that the predicted endpoint displacements are more separable by instruction direction.
+Silhouette Score (SS). SS measures how well endpoint displacements cluster according to instruction direction.
+For each trial i, define the average distance to trails with the same instruction direction as
+ai =
+1
+|Iyi| −1
+X
+j∈Iyi
+j̸=i
+∥ˆpi −ˆpj∥2,
+and the nearest average distance to another instruction-direction cluster as
+bi = min
+k̸=yi
+1
+|Ik|
+X
+j∈Ik
+∥ˆpi −ˆpj∥2.
+The silhouette value for trial i is
+si =
+bi −ai
+max(ai, bi) + ϵ,
+24
+
+
+===== PAGE 25 =====
+
+and the overall silhouette score is
+SS = 1
+N
+N
+X
+i=1
+si.
+Higher SS indicates that endpoint displacements are closer to trials from the same instruction direction than
+to trials from other directions.
+25

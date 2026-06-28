@@ -1,0 +1,1026 @@
+================================================== PAGE 4 len 2478 ==================================================
+1
+67
+10−1
+100
+101
+102
+Hours per task (log)
+Pick-and-Place
+1
+39
+Fine Pick-and-Place
+1
+36
+10−1
+100
+101
+102
+Hours per task (log)
+Folding
+1
+19
+Insertion/Ejection
+1
+16
+Tool Use
+1
+8
+Sorting
+1
+10
+Tying/Untying
+Figure 4: Per-task hours by primitive category. Hours-per-task on a log scale in descending order
+within each category. Top row: Pick-and-Place and Fine Pick-and-Place (the two largest categories
+in terms of number of tasks). Bottom row: the five remaining categories. Descriptions of each task
+category along with example images from the data can be found in Appendix A.
+VLA variants
+DiT variants
+Task
+Metric
+Pooled adaLN FAST + X-Attn X-Attn DINOv3-xattn CLIP-adaln CLIP-xattn
+Bottles
+Strict
+67.3%
+8.0%
+0.0%
+73.5%
+11.8%
+38.9%
+Progress
+83.0%
+44.0%
+5.2%
+93.1%
+53.6%
+74.1%
+Dishrack
+Strict
+30.0%
+2.8%
+0.0%
+23.2%
+28.6%
+34.7%
+Progress
+75.7%
+47.2%
+25.0%
+74.1%
+72.3%
+81.3%
+Mugs
+Strict
+1.0%
+0.0%
+0.0%
+2.0%
+0.0%
+0.0%
+Progress
+25.5%
+6.5%
+5.0%
+35.3%
+15.9%
+21.0%
+Aggregate Mean strict
+32.8%
+3.6%
+0.0%
+32.9%
+13.4%
+24.5%
+Mean progress
+61.4%
+32.6%
+11.7%
+67.5%
+47.3%
+58.8%
+Latency (ms)
+17.24
+19.24
+19.24
+37.4
+27.5
+37.5
+Table 1: Architecture ablations. Real-world evaluation of VLA and DiT architecture variants after
+200k training steps. Strict success reports the percentage of tasks completed; progress reports average
+task progress. Latency is measured in ms/chunk for 10 diffusion steps. The models are trained on an
+internal corpus of 7,000 hours of robot data.
+terfaces between backbones and action heads, and training hyperparameters affect performance across
+these two families. Unless otherwise noted, the comparison models in this section are trained on an
+internal corpus of 7,000 hours, which we had for development before the release dataset was finalized.
+We take the modeling decisions from this study to train and evaluate our final ABC models on the pub-
+licly released ABC-130K in Section 5. All models take as input three 224 × 224 images from the top
+and two gripper cameras, along with a 14D proprioceptive joint state. Non-square images are padded
+using letterbox padding. The policy outputs a 30-step chunk of absolute joint-position targets, and states
+and actions are normalized with z-score normalization. The architecture details for both models can be
+found in Appendix B.2 and the training details in Appendix B.3. All models are trained on NVIDIA
+H200 GPUs.
+All real-world evaluations in this section are on three tasks: throwing plastic bottles into a bin,
+4
+
+================================================== PAGE 5 len 4613 ==================================================
+loading plates into a tabletop dish rack, and turning mugs right side up. Each task is evaluated for
+50 trials. Our policies are executed at 30 Hz. Following [15], we execute our policies asynchronously
+with an action prefix. This is done to prevent mode switching, thereby ensuring smooth trajectories. As
+noted in Appendix H.2, depending on the task, performance can improve by modulating the length of
+the prefix as well as the execution horizon of the action chunk.
+3.1
+ABC-DiT
+We study various architectural choices for diffusion transformers [2]. We specifically investigate how
+the DiT head communicates with various vision encoders. All our DiTs use 32 layers, 24 attention
+heads, and a hidden dimension of 1536, which is larger than the DiT-XL architecture. We chose this
+large model size to ensure that architecture choices were not bottlenecked by network capacity, allowing
+us to better understand what matters at scale (comparisons of various DiT sizes are in Appendix B.4).
+We compare the following three variants below.
+CLIP-AdaLN: We begin with a baseline inspired by the LBM architecture [10]. The policy back-
+bone is a DiT [2] that takes as input a noised action chunk and predicts the velocity of the conditional
+probability flow. Each image is encoded independently using a CLIP ViT-B image encoder [16], and
+the resulting CLS tokens are concatenated to form a compact visual representation. The task language
+instruction is embedded using the CLIP text encoder and projected with an MLP. This vector is concate-
+nated with the visual representation, an MLP projection of the robot proprioception, and the diffusion
+timestep embedding to form a single conditioning vector. The DiT is then conditioned on this vector
+through a standard adaLN conditioning mechanism [2].
+CLIP-Cross-Attention: In the previous variant, the AdaLN conditioning compresses each image
+into a single token. This compression might lose fine-grained spatial information that is important for
+manipulation. Alternatively, we can have the DiT attend to the sequence of visual tokens. Since directly
+attending to all tokens is expensive, we use a set of learned latent queries to attend over all vision
+tokens. For all our experiments, we use 12 latent query tokens per image as it offers a good balance of
+expressivity and memory overhead. In the DiT block, after each self-attention layer, we add a cross-
+attention layer where the query tokens are taken from the noised action tokens and the keys and values
+are the pooled visual tokens. The non-visual conditioning variables remain in the AdaLN pathway.
+DINO-Cross-Attention: Image-text alignment is not necessarily the objective most aligned with low-
+level robot actions. Manipulation policies often require precise spatial cues that may not be optimally
+preserved by CLIP but may be captured with more pixel aligned representations like DINOv3 [17]. We
+use the cross-attention architecture and replace the CLIP image encoder with a DINOv3 ViT-B encoder.
+All models are trained for 200k steps with a global batch size of 4608. We linearly warmup the
+learning rate for the first 1000 iterations to 1 × 10−4 and then keep it constant throughout training. We
+use the AdamW optimizer [18] with a weight decay of 0.01. We use a learning rate scale of 0.1 for the
+vision encoder. We use gradient clipping with a maximum gradient norm of 10. The proprioception
+input is dropped out with a probability of 0.1.
+The results are shown in Table 1. Replacing global AdaLN-based visual conditioning with pooled
+cross-attention improves task progress, suggesting that preserving token-level visual information is im-
+portant for action generation. Replacing CLIP with DINOv3 further improves performance, indicating
+that the choice of visual representation is also a key design factor for real-world manipulation. For the
+rest of this paper, we use DINOv3 and this pooled cross-attention conditioning scheme as our ABC-DiT
+model. This model has 2B parameters in total.
+3.2
+ABC-VLA
+For ABC-VLA, we build on Gemma 3 [19], a 4B-parameter VLM with a SigLIP vision encoder and a
+Gemma language decoder, which we pair with a small DiT action head to generate action chunks. We
+consistently find that freezing the VLM backbone performs poorly, so we finetune the backbone using
+the action prediction objective. The connector between the VLM and action head routes vision-language
+features into the action expert and can provide gradients back to update the VLM. Existing VLAs adopt
+many different connector mechanisms, but their effects are typically entangled with differences in data
+5
+
+================================================== PAGE 6 len 4610 ==================================================
+and training recipe, so their relative merits are difficult to isolate. We therefore compare three represen-
+tative connectors directly on our data, fixing the backbone, action head, and training recipe so that only
+the connector varies.
+Cross Attention: We run the VLM on the image, language, and proprioceptive context, extract final-
+layer token features, and project them to the DiT token dimension. These projected VLM features serve
+as the keys and values for a cross-attention layer in each DiT block, while the noisy action token stream
+inside the DiT queries them. The VLM backbone is finetuned end-to-end by the diffusion objective, so
+diffusion gradients flow through the DiT’s cross-attention back into the VLM.
+Cross Attention + FAST: Following [20], we concatenate FAST-tokenized [21] actions in the VLM
+token sequence and train with next-token-prediction CE to finetune the VLM. Simultaneously, the DiT
+cross-attends to the context token features at the final VLM layer, which we detach to “insulate” the back-
+bone from diffusion gradients. In our experiments, cross attention slightly outperforms π0.5-style [13]
+reuse of the VLM’s keys and values.
+Adaptive LayerNorm (AdaLN): We adapt the LBM-2 [10] conditioning scheme, where VLM fea-
+tures are compressed into a fixed-length conditioning vector that modulates the DiT through adaLN [2].
+Unlike the cross-attention variants, the DiT action tokens do not directly attend to VLM tokens. Instead,
+VLM token features from the final layer are summarized by an attention-pooling module into 8 512-
+dimensional tokens, which are flattened and projected to produce the DiT’s adaLN shifts, scales, and
+residual gates. We use attention pooling with QK-Norm [22] in place of LBM-2’s register tokens.
+Variance Reduction For AdaLN and Cross Attention, the diffusion training loss is an expectation over
+three random variables: the data sample x, the noise ϵ, and the timestep τ (i.e., ∇L = Ex,ϵ,τ[∇ℓ(x, ϵ, τ)]).
+Since our DiT is small relative to the VLM (42M vs. 4B parameters), it is efficient to amortize a single
+VLM pass across many (ϵ, τ) draws. Specifically, in the forward pass, we replicate the VLM features
+and clean action k times within the batch and pair each copy with an independent (ϵ, τ) sample. In the
+backward pass, the gradient expansion averages at the conditioning interface, so the VLM backward cost
+is independent of k. This yields a strictly lower-variance gradient estimator with negligible overhead:
+1.346 s/step at k = 1 and 1.366 s/step at k = 8 on H200. Figure 6 shows the improvement that the
+multiple draws trick provides.
+Table 1 compares the three variants. Vanilla cross-attention performs worst on aggregate progress
+(9.2%), consistent with prior studies. FAST co-training helps (29.6%) by replacing the diffusion gradient
+on the VLM with a cross-entropy gradient. AdaLN beats both variants on our data (67.5%) despite
+exposing the VLM to denoising gradients. This suggests that diffusion gradients are not intrinsically
+incompatible with VLM features if given a proper interface.
+3.3
+Scaling compute across batch size and training steps
+When training policies, there is no consensus on the optimal batch size. Models like OpenVLA [23]
+and LBM [10] use 2048 and 2560, respectively, whereas GR00T N1 [11] uses 16,384. In order to more
+precisely understand the effect of increasing the batch size, we train three different variants of ABC-DiT
+and ABC-VLA. We train both on batch sizes of 1536, 4608, and 9216. Figure 5 shows the plot of real
+world task success and progress for these variants for 100K and 200K training steps. For the relatively
+smaller batch sizes, the DiT outperforms the VLA. However, as we scale the batch size to 9216, the
+DiT does not improve as much, whereas we see the VLA has a much larger jump in performance.
+Furthermore, we see that the VLA, at higher batch sizes, is able to outperform the DiT in real world
+performance, though the DiT is more compute-efficient.
+3.4
+Offline Metrics for Policy Evaluation
+Real-world evaluation does not scale to the number of minor architecture and hyperparameter decisions
+involved in developing a policy, so in practice we make many of these using offline metrics and reserve
+real-world evaluation for the major architectural comparisons. This raises the question of whether offline
+metrics are predictive of real-world performance at all.
+For all the models trained in the previous sections, we compare the real-world strict success rates and
+progress rates against training loss, validation loss, and validation action error to assess whether offline
+6
+
+================================================== PAGE 7 len 2912 ==================================================
+1020
+1021
+1022
+0%
+20%
+40%
+1.5k
+4.6k
+9.2k
+1.5k
+4.6k
+9.2k
+Training FLOPs
+Mean strict success (%)
+Strict Success
+1020
+1021
+1022
+40%
+60%
+80%
+1.5k
+4.6k
+9.2k
+1.5k
+4.6k
+9.2k
+Training FLOPs
+Mean progress (%)
+Task Progress
+DiT
+VLA
+Figure 5: More training steps and larger batch size give better performance. Real-world task success
+(left) and task progress (right) with training compute for DiT and VLA policies; each connected pair uses
+the same effective batch size (approximately 1.5K, 4.6K, or 9K) evaluated at different checkpoints. We
+consistently find that the DiT is more flop-efficient.
+0
+500
+1,000
+1,500
+2,000
+2,500
+3,000
+0.05
+0.06
+0.08
+0.10
+0.14
+H200 GPU-hours
+Train loss
+8 Draws
+1 Draw
+Figure 6: Eight diffusion draws reduce VLA
+train loss at fixed accelerator time. Training loss
+versus GPU-hours for one- and eight-draw VLA
+diffusion training.
+0
+100k
+200k
+0.04
+0.05
+0.06
+0.08
+0.1
+Optimization step
+Loss (Train/Val.)
+0%
+20%
+40%
+60%
+Real progress (%)
+Train Loss
+Val Loss
+Real Progress
+Figure 7: VLA success rate and offline metrics
+over time. VLA training and validation loss with
+real-world progress across checkpoints.
+metrics predict real-world performance. While training and validation loss are defined as the conditional
+flow matching loss of the models on their respective data splits, validation action error is the L2 distance
+between predicted and ground-truth action chunks, computed by running 10 diffusion steps per model
+with no action prefix.
+Training loss and validation action error correlate with real world performance. The resulting
+plots are shown in Figure 8. Training loss and validation action error are both negatively correlated with
+real-world performance, with statistically significant Pearson and Spearman correlations. Validation
+action error shows the strongest negative correlation. In contrast, validation loss is not significantly
+correlated with real-world performance. We note that validation action error is only meaningful when
+the number of diffusion steps is held fixed, since the error can be trivially reduced by lowering the
+number of diffusion steps, but this does not improve real-world performance. These correlations hold
+true across different model architectures and training batch sizes. Figure 7 shows an example of the
+phenomenon with the VLA—the training loss goes down over time as real world progress improves,
+meanwhile validation loss initially goes down but then increases even though performance improves
+over time. Offline metrics, such as validation action error and training loss, thus give us a cheap, scalar
+proxy for evaluating the many small design decisions in this section without having to test everything in
+the real world. While they cannot reliably predict task success rates or reveal failure modes, we still find
+them to be helpful for iterating on modeling decisions. For a higher-fidelity proxy, we turn to simulation
+(Section 4).
+7
+
+================================================== PAGE 8 len 1978 ==================================================
+0.03
+0.04
+0.05
+0.06
+0.07
+0
+20
+40
+60
+80
+n = 16
+r = −0.84, p = 4.1×10−5
+ρ = −0.83, p = 7.9×10−5
+Strict success (%)
+Training Loss
+0.06
+0.07
+0.08
+0.09
+0.10
+n = 16
+r = −0.04, p = 0.886
+ρ = 0.00, p = 1.000
+Validation Loss
+0.09
+0.10
+0.11
+0.12
+0.13
+n = 16
+r = −0.89, p = 3.8×10−6
+ρ = −0.93, p = 1.5×10−7
+Validation Action Error
+0.03
+0.04
+0.05
+0.06
+0.07
+0
+20
+40
+60
+80
+n = 16
+r = −0.78, p = 3.9×10−4
+ρ = −0.84, p = 5.0×10−5
+Training Loss
+Task progress (%)
+0.06
+0.07
+0.08
+0.09
+0.10
+n = 16
+r = 0.14, p = 0.599
+ρ = 0.09, p = 0.737
+Validation Loss
+0.09
+0.10
+0.11
+0.12
+0.13
+n = 16
+r = −0.85, p = 2.9×10−5
+ρ = −0.93, p = 1.9×10−7
+Validation Action Error
+Fit
+DiT
+VLA
+1.5k batch
+4.6k batch
+9k batch
+Figure 8: Offline metrics versus real-world policy performance. We analyze correlation between
+checkpoint training diagnostics and real-world success. Training loss and validation action error are
+both negatively correlated with real-world performance. Each point is one checkpoint, with real-world
+success averaged across the three evaluation tasks.
+4
+ABC-Sim
+10
+20
+30
+40
+50
+60
+10
+20
+30
+40
+40
+50
+60
+70
+80
+50
+60
+70
+n = 12
+r = 0.85, p = 4.2×10−4
+Sim strict success (%)
+Real strict success (%)
+Strict success
+n = 12
+r = 0.91, p = 5.0×10−5
+Sim task progress (%)
+Real task progress (%)
+Task progress
+Fit
+DiT
+VLA
+Figure 9: Sim-to-real progress correlation. Task-level simulation progress correlation with real-
+world progress across DiT checkpoints.
+Offline metrics allow us to assess many decisions cheaply but cannot report task success or reveal
+failure modes. Simulation closes this gap as it yields actual success rates and watchable rollouts, and
+lets researchers without hardware iterate. Our release includes ABC-Sim—a suite of simulation envi-
+ronments and accompanying teleoperation data.
+We re-create the real robot setup in MuJoCo [24]. The images are rendered inside the simulation,
+leading to low-fidelity captures. We also expose a pipeline for re-rendering these scenes in Blender to
+8
+
+================================================== PAGE 9 len 3798 ==================================================
+Figure 10: ABC-Sim tasks. Policy rollouts for our simulated task built in MuJoCo for sim-to-real
+evaluation. The multi-step turning mugs right-side up task, shown across three stages (grasp, flip, place).
+Rollouts on more simulated tasks can be found in the Appendix. By default we render the rollouts in
+MuJoCo but we also provide a Blender pipeline for generating high-quality renders.
+create higher-fidelity images with path tracing. This allows users to both generate and train on higher-
+quality simulation renderings. We release simulation environments for the following ten tasks (Fig. 10):
+1. throwing plastic bottles into a bin
+2. sweeping paper scraps off the table
+3. turning mugs right-side up
+4. loading plates into tabletop dishrack
+5. hanging a mug on a mug rack
+6. setting up chess pieces on a board
+7. spelling “abc” with blocks
+8. placing markers in a drawer
+9. pouring beads
+10. in-hand object handover
+The simulation runs at 240Hz and visual observations are sent to a VR headset at 60Hz. The current
+framework supports both Meta Quest and Apple Vision Pro headsets. The teleoperator uses a pair of
+GELLO [25] leader arms in order to teleoperate the YAM arms in simulation to complete the various
+tasks. VR-based teleoperation for extended periods of time can lead to motion sickness in operators.
+To mitigate this, we enable pass-through rendering so that the operators view the real world behind the
+simulated robot setup. We release over 400 hours of VR teleoperation data in simulation on all of these
+tasks, as well as the VR teleoperation stack to collect teleop data similar to [26–28].
+To assess whether simulation performance is indicative of real-world performance, we conduct eval-
+uations for sim-to-real correlations. We train ABC-DiT and ABC-VLA on ABC-130K and select four
+checkpoints per model. We also select four different ABC-DiT checkpoints trained on a mixture of our
+internal 7K hour dataset and the simulation data for a total of 12 checkpoints. We evaluate each of them
+across the same three tasks used in Section 3: throwing plastic bottles into a bin, loading plates into
+tabletop dishrack, and turning mugs right-side up. Each task was evaluated for 50 trials. For both simu-
+lation and real results, we average the success rates and progress across the tasks for each checkpoint.
+Simulation evaluations correlate strongly with real world performance. The results of the eval-
+uation are shown in Figure 9. For the strict success metric, we observe a Pearson correlation of r = 0.85
+(p = 4.2 × 10−4, n = 12) and for task progress we observe r = 0.91 (p = 5.0 × 10−5, n = 12).
+This indicates that simulation is a meaningful predictor of real performance. We hope that given this
+correlation, our sim stack can provide a way for researchers to debug design decisions in their policies
+prior to conducting expensive real world evaluations, or for those without hardware to contribute to the
+research frontier.
+5
+Real World Capabilities
+In this section, we demonstrate the capabilities of our trained policies on the publicly released ABC-
+130K set. We begin by showing the performance of the pretrained base policies in Section 5.1. Sec-
+tion 5.2 shows the importance of pretraining when finetuning on dexterous tasks. Lastly, for Section 5.3,
+we study the case of box folding, a task for which naive finetuning is insufficient for real world per-
+formance, and how DAgger can be used to specifically collect recovery behaviors. Appendix H studies
+how conditioning can steer policy behavior at inference time—selecting an operator’s style, trading off
+motion smoothness against visual responsiveness, and resolving temporal ambiguity within a task. Two
+of these are enabled directly by metadata we release with ABC-130K—per-episode operator identities
+9
+
+================================================== PAGE 10 len 2508 ==================================================
+Bottles
+Dishrack
+Mug flip
+0
+20
+40
+60
+80
+100
+Real progress (%)
+ABC-DiT
+ABC-VLA
+Figure 11: ABC-DiT/ABC-VLA
+real-world performance. Task
+progress across the three real-world
+tasks.
+0
+50
+100
+150
+200
+0
+25
+50
+75
+100
+Checkpoint step (k)
+Sim progress (%)
+Bottles
+0
+50
+100
+150
+200
+Checkpoint step (k)
+Dishrack
+0
+50
+100
+150
+200
+Checkpoint step (k)
+Mug flip
+DiT 9.2kBS
+VLA 9.2kBS
+Figure 12: Pretraining simulation progress. Mean task
+progress across three tasks in simulation at multiple
+checkpoints during pretraining of ABC-DiT and ABC-VLA
+on ABC-130K.
+and subtask annotations—illustrating how richer dataset labels, not just more trajectories, translate into
+finer-grained control at test-time.
+5.1
+Pretraining Capabilities
+We train the ABC-DiT and ABC-VLA models, which were, respectively, the best DiT and VLA archi-
+tectures found in Section 3 on the ABC-130K for 200,000 steps with the same training settings as in
+Section 3. In Figure 12, we plot the progress of three tasks across various points during training. We can
+see that for both models, as training iterations continue, simulation performance tends to increase. We
+also evaluate each task 50 times in the real world in Figure 11.
+5.2
+Downstream single-task Finetuning
+We test the effectiveness of our pretrained policies as a useful initialization for downstream finetuning.
+We choose four high-precision, dexterous tasks for this comparison: i) extracting a credit card from
+a wallet, ii) sorting LEGO bricks, iii) inserting a pen cap, and iv) unscrewing a bottle cap. For each
+task we train three single-task policies that differ only in their initialization: (i) trained from scratch on
+the target task; (ii) finetuned from a checkpoint pretrained on the public ABC-130K (3,500 hours); and
+(iii) finetuned from a checkpoint pretrained on a larger internal corpus of 7,000 hours, included to test
+whether the returns from pretraining continue to scale. Figure 13 reports these results and Appendix G
+details our evaluation rubrics. We use ABC-DiT for the LEGO sorting, pen-cap insertion, and bottle-cap
+unscrewing, and ABC-VLA for the credit-card extraction task. We found that ABC-VLA was markedly
+better as a base model compared to ABC-DiT for this task. Pretraining quality has a substantial effect on
+downstream performance. Across all tasks, finetuning from a checkpoint pretrained on more data yields
+a stronger single-task policy. More details about the task, rollouts, evaluation rubric, and finetuning
+recipe can be found in Appendix E.
+10
+
+================================================== PAGE 12 len 4544 ==================================================
+drops down to 15% during the second round. While the fine-tuning data was collected inside a cage, we
+opt to collect the DAgger interventions with no cage.
+After each round of DAgger, we take the base model from the previous round and continue training
+for 75k steps. We maintain an 80:10:10 ratio where 80% of the data is from the previous round, 10% is
+from interventions in the current round, and the other 10% is from the rest of the episode in the current
+round. This implicitly overweights interventions while still keeping the rollouts from the whole episode.
+We find that this ratio is better than training on either whole episodes or interventions alone. This
+is partly because training on intervention data alone allows the policy to exploit spurious correlations
+between the source distribution (collected in cages) and the intervention data (collected without), which
+ultimately worsens the policy. Figure 15 shows qualitative results on this task; see the website for videos
+showcasing the dexterity, and Appendix F for details of our novel DAgger collection infrastructure.
+6
+Related Work
+6.1
+Large-scale open datasets for robotics
+We target the lack of large-scale, dexterous data for low-cost bimanual systems. Early efforts towards
+data scaling primarily focused on single-arm manipulation. BridgeData-V2 [6] released ~100 hours of
+robot data across 24 environments on a low-cost WidowX arm. DROID [4] provides 350 hours of curated
+teleoperation data on a single Franka arm across more than 500 scenes, while RH20T [29] contributes
+110k contact-rich trajectories across 41 skills and 5 single-arm platforms. Open X-Embodiment [5]
+aggregates trajectories from multiple embodiments and institutions into a unified source. However, it is a
+heterogeneous collection with widely varying per-dataset quality, action spaces, and control frequencies.
+More recently, the community has shifted focus toward bimanual and dexterous manipulation. The
+ALOHA ecosystem [30–32] has popularized bimanual teleoperation for contact-rich tasks, though the
+hardware remains moderately expensive (∼$20,000) and the released datasets are smaller in scale com-
+pared to our collection. Taking a complementary approach to scaling, GR00T N1 [11] combines 88
+hours of real teleoperation data with 780k synthetic trajectories generated via simulation and video
+models. The MolmoAct2-BimanualYAM Dataset [8] is a bimanual dataset containing 28 unique tasks
+and 720 hours in total.
+In contrast, our dataset contains over 3,500 hours of high-quality, real robot data on a single low-cost
+bimanual embodiment (our $8,000 YAM station), spanning more than 100 tasks with diverse skills and
+background scenes. The closest dataset to our scale is AgiBot-World [7], which features approximately
+3000 hours of real-world bimanual data across roughly 200 tasks. However, AgiBot-World was collected
+on a substantially more expensive platform (the $30,000 AgiBot G1). Additionally, while AgiBot-
+World emphasizes long-horizon macro-manipulation, we also provide data for various fine, dexterous
+manipulation tasks. We feature tasks such as extracting cards from wallets, folding paper planes, and
+unlocking doors using a key.
+6.2
+Large-scale Behavior Cloning
+Policy architecture and optimization details are critical for training robot policies at scale. While the
+broad strokes of these designs are publicly available—such as the effectiveness of diffusion objectives
+for action modeling [9] and the benefits of reusing visual features from pre-trained models—the exact
+implementations vary widely. For instance, the Large Behavior Model (LBM) [10] initializes its image
+backbone with CLIP [33] and uses adaptive layer normalization (adaLN) [2] to condition its diffusion
+model. Conversely, other works leverage Vision-Language Model (VLM) backbones: GR00T-N1 [11]
+cross-attends to VLM outputs, π0.5 [13] cross-attends layer-wise to the KV cache of its VLM. Despite
+these high-level insights, finer details of these training recipes are rarely reported, and the underlying
+training code is largely kept closed-source [10, 12–14, 34]. Because these large-scale efforts are trained
+and evaluated on proprietary datasets with diverse and often unknown compute budgets, the broader
+community cannot evaluate these design choices without reproducing deep implementation stacks from
+scratch. Our dataset, along with the accompanying infrastructure for large-scale training and evaluation,
+provides an open-source foundation to answer research questions in manipulation.
+12
+
+================================================== PAGE 14 len 3869 ==================================================
+References
+[1] Stephane Ross, Geoffrey J. Gordon, and J. Andrew Bagnell. A reduction of imitation learning and
+structured prediction to no-regret online learning, 2011. URL https://arxiv.org/abs/1011.
+0686.
+[2] William Peebles and Saining Xie. Scalable diffusion models with transformers, 2023. URL https:
+//arxiv.org/abs/2212.09748.
+[3] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Xi Chen, Krzysztof Choro-
+manski, Tianli Ding, Danny Driess, Avinava Dubey, Chelsea Finn, Pete Florence, Chuyuan Fu,
+Montse Gonzalez Arenas, Keerthana Gopalakrishnan, Kehang Han, Karol Hausman, Alexan-
+der Herzog, Jasmine Hsu, Brian Ichter, Alex Irpan, Nikhil Joshi, Ryan Julian, Dmitry Kalash-
+nikov, Yuheng Kuang, Isabel Leal, Lisa Lee, Tsang-Wei Edward Lee, Sergey Levine, Yao Lu,
+Henryk Michalewski, Igor Mordatch, Karl Pertsch, Kanishka Rao, Krista Reymann, Michael
+Ryoo, Grecia Salazar, Pannag Sanketi, Pierre Sermanet, Jaspiar Singh, Anikait Singh, Radu
+Soricut, Huong Tran, Vincent Vanhoucke, Quan Vuong, Ayzaan Wahid, Stefan Welker, Paul
+Wohlhart, Jialin Wu, Fei Xia, Ted Xiao, Peng Xu, Sichun Xu, Tianhe Yu, and Brianna Zitkovich.
+Rt-2: Vision-language-action models transfer web knowledge to robotic control, 2023.
+URL
+https://arxiv.org/abs/2307.15818.
+[4] Alexander Khazatsky, Karl Pertsch, Suraj Nair, Ashwin Balakrishna, Sudeep Dasari, Siddharth
+Karamcheti, Soroush Nasiriany, Mohan Kumar Srirama, Lawrence Yunliang Chen, Kirsty Ellis,
+Peter David Fagan, Joey Hejna, Masha Itkina, Marion Lepert, Yecheng Jason Ma, Patrick Tree
+Miller, Jimmy Wu, Suneel Belkhale, Shivin Dass, Huy Ha, Arhan Jain, Abraham Lee, Young-
+woon Lee, Marius Memmel, Sungjae Park, Ilija Radosavovic, Kaiyuan Wang, Albert Zhan, Kevin
+Black, Cheng Chi, Kyle Beltran Hatch, Shan Lin, Jingpei Lu, Jean Mercat, Abdul Rehman, Pan-
+nag R Sanketi, Archit Sharma, Cody Simpson, Quan Vuong, Homer Rich Walke, Blake Wulfe, Ted
+Xiao, Jonathan Heewon Yang, Arefeh Yavary, Tony Z. Zhao, Christopher Agia, Rohan Baijal, Ma-
+teo Guaman Castro, Daphne Chen, Qiuyu Chen, Trinity Chung, Jaimyn Drake, Ethan Paul Foster,
+Jensen Gao, Vitor Guizilini, David Antonio Herrera, Minho Heo, Kyle Hsu, Jiaheng Hu, Muham-
+mad Zubair Irshad, Donovon Jackson, Charlotte Le, Yunshuang Li, Kevin Lin, Roy Lin, Zehan Ma,
+Abhiram Maddukuri, Suvir Mirchandani, Daniel Morton, Tony Nguyen, Abigail O’Neill, Rosario
+Scalise, Derick Seale, Victor Son, Stephen Tian, Emi Tran, Andrew E. Wang, Yilin Wu, Annie
+Xie, Jingyun Yang, Patrick Yin, Yunchu Zhang, Osbert Bastani, Glen Berseth, Jeannette Bohg,
+Ken Goldberg, Abhinav Gupta, Abhishek Gupta, Dinesh Jayaraman, Joseph J Lim, Jitendra Ma-
+lik, Roberto Martín-Martín, Subramanian Ramamoorthy, Dorsa Sadigh, Shuran Song, Jiajun Wu,
+Michael C. Yip, Yuke Zhu, Thomas Kollar, Sergey Levine, and Chelsea Finn. Droid: A large-scale
+in-the-wild robot manipulation dataset, 2025. URL https://arxiv.org/abs/2403.12945.
+[5] Open X-Embodiment Collaboration. Open X-embodiment: Robotic learning datasets and RT-X
+models. In IEEE International Conference on Robotics and Automation (ICRA), 2024.
+[6] Homer Walke, Kevin Black, Abraham Lee, Moo Jin Kim, Max Du, Chongyi Zheng, Tony Zhao,
+Philippe Hansen-Estruch, Quan Vuong, Andre He, Vivek Myers, Kuan Fang, Chelsea Finn, and
+Sergey Levine. BridgeData V2: A dataset for robot learning at scale. In Conference on Robot
+Learning (CoRL), 2023.
+[7] Qingwen Bu, Jisong Cai, Li Chen, Xiuqi Cui, Yan Ding, Siyuan Feng, Xindong He, Xu Huang,
+et al. Agibot world colosseo: A large-scale manipulation platform for scalable and intelligent
+embodied systems. In 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS). IEEE, 2025.
+[8] Haoquan Fang, Jiafei Duan, Donovan Clay, Sam Wang, Shuo Liu, Weikai Huang, Xiang Fan, Wei-
+Chuan Tsai, Shirui Chen, Yi Ru Wang, Shanli Xing, Jaemin Cho, Jae Sung Park, Ainaz Eftekhar,
+14
+
+================================================== PAGE 16 len 3321 ==================================================
+[19] Aishwarya Kamath, Johan Ferret, Shreya Pathak, Nino Vieillard, Ramona Merhej, Sarah Perrin,
+Tatiana Matejovicova, Alexandre Ramé, Morgane Rivière, Louis Rouillard, et al. Gemma 3 tech-
+nical report. arXiv preprint arXiv:2503.19786, 4, 2025.
+[20] Danny Driess, Jost Tobias Springenberg, Brian Ichter, Lili Yu, Adrian Li-Bell, Karl Pertsch,
+Allen Z. Ren, Homer Walke, Quan Vuong, Lucy Xiaoyang Shi, and Sergey Levine.
+Knowl-
+edge insulating vision-language-action models: Train fast, run fast, generalize better, 2025. URL
+https://arxiv.org/abs/2505.23705.
+[21] Karl Pertsch, Kyle Stachowicz, Brian Ichter, Danny Driess, Suraj Nair, Quan Vuong, Oier Mees,
+Chelsea Finn, and Sergey Levine. Fast: Efficient action tokenization for vision-language-action
+models, 2025. URL https://arxiv.org/abs/2501.09747.
+[22] Alex Henry, Prudhvi Raj Dachapally, Shubham Pawar, and Yuxuan Chen. Query-key normalization
+for transformers, 2020. URL https://arxiv.org/abs/2010.04245.
+[23] Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair,
+Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, Quan Vuong, Thomas Kollar, Ben-
+jamin Burchfiel, Russ Tedrake, Dorsa Sadigh, Sergey Levine, Percy Liang, and Chelsea Finn.
+Openvla: An open-source vision-language-action model, 2024. URL https://arxiv.org/abs/
+2406.09246.
+[24] Emanuel Todorov, Tom Erez, and Yuval Tassa. Mujoco: A physics engine for model-based control.
+In 2012 IEEE/RSJ International Conference on Intelligent Robots and Systems, pages 5026–5033,
+2012. doi: 10.1109/IROS.2012.6386109.
+[25] Philipp Wu, Yide Shentu, Zhongke Yi, Xingyu Lin, and Pieter Abbeel. Gello: A general, low-cost,
+and intuitive teleoperation framework for robot manipulators, 2024. URL https://arxiv.org/
+abs/2309.13037.
+[26] Younghyo Park, Jagdeep Singh Bhatia, Lars Lien Ankile, and Pulkit Agrawal. Dexhub and dart:
+Towards internet scale robot data collection. ArXiv, abs/2411.02214, 2024. URL https://api.
+semanticscholar.org/CorpusID:273821640.
+[27] Yajvan Ravan, Adam Rashid, Alan Yu, Kai McClennen, Gio Huh, Kevin Yang, Zhutian Yang,
+Qinxi Yu, Xiaolong Wang, Phillip Isola, and Ge Yang. Lucid-xr: An extended-reality data engine
+for robotic manipulation, 2026. URL https://arxiv.org/abs/2605.00244.
+[28] Xinkai Jiang, Qihao Yuan, Enes Ulas Dincer, Hongyi Zhou, Ge Li, Xueyin Li, Julius Haag, Nicolas
+Schreiber, Kailai Li, Gerhard Neumann, and Rudolf Lioutikov. Iris: An immersive robot interac-
+tion system, 2025. URL https://arxiv.org/abs/2502.03297.
+[29] Hao-Shu Fang, Hongjie Fang, Zhenyu Tang, Jirong Liu, Junbo Wang, Haoyi Zhu, and Cewu Lu.
+RH20T: A comprehensive robotic dataset for learning diverse skills in one-shot. IEEE Robotics
+and Automation Letters, 2024.
+[30] Tony Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn. Learning fine-grained bimanual
+manipulation with low-cost hardware, 2023. URL https://arxiv.org/abs/2304.13705.
+[31] Zipeng Fu, Tony Z. Zhao, and Chelsea Finn. Mobile aloha: Learning bimanual mobile manip-
+ulation with low-cost whole-body teleoperation, 2024. URL https://arxiv.org/abs/2401.
+02117.
+[32] Tony Z. Zhao, Jonathan Tompson, Danny Driess, Pete Florence, Kamyar Ghasemipour, Chelsea
+Finn, and Ayzaan Wahid. Aloha unleashed: A simple recipe for robot dexterity, 2024. URL
+https://arxiv.org/abs/2410.13126.
+16
+
+================================================== PAGE 17 len 2089 ==================================================
+[33] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal,
+Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual
+models from natural language supervision. In International conference on machine learning, pages
+8748–8763. PmLR, 2021.
+[34] Chi-Lam Cheang, Guangzeng Chen, Ya Jing, Tao Kong, Hang Li, Yifeng Li, Yuxiao Liu, Hongtao
+Wu, Jiafeng Xu, Yichu Yang, et al. Gr-2: A generative video-language-action model with web-
+scale knowledge for robot manipulation. arXiv preprint arXiv:2410.06158, 2024.
+[35] I2RT Robotics. i2rt: Python API for I2RT Robots. https://github.com/i2rt-robotics/
+i2rt, 2025. Accessed: 2026-04-20.
+[36] The ZeroMQ authors. ZeroMQ: An open-source universal messaging library. https://zeromq.
+org, 2007. Accessed: 2026-05-31.
+[37] Steven Macenski, Tully Foote, Brian Gerkey, Chris Lalancette, and William Woodall. Robot oper-
+ating system 2: Design, architecture, and uses in the wild. Science Robotics, 7(66):eabm6074,
+2022.
+doi: 10.1126/scirobotics.abm6074.
+URL https://www.science.org/doi/abs/10.
+1126/scirobotics.abm6074.
+[38] Tony Z Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn. Learning fine-grained bimanual
+manipulation with low-cost hardware. arXiv preprint arXiv:2304.13705, 2023.
+[39] Jason Jingzhou Liu, Yulong Li, Kenneth Shaw, Tony Tao, Ruslan Salakhutdinov, and Deepak
+Pathak. Factr: Force-attending curriculum training for contact-rich policy learning, 2025. URL
+https://arxiv.org/abs/2502.17432.
+[40] Steven Oh, Jason Jingzhou Liu, Tony Tao, Philip Han, Kenneth Shaw, Satoshi Funabashi, Ruslan
+Salakhutdinov, and Deepak Pathak. Factr 2: Learning force sensing and force-aware policies for
+any robot arm. 2026.
+[41] Kevin Zakka. Mink: Python inverse kinematics based on MuJoCo, February 2026. URL https:
+//github.com/kevinzakka/mink.
+[42] Qianzhong Chen, Justin Yu, Mac Schwager, Pieter Abbeel, Yide Shentu, and Philipp Wu. SARM:
+Stage-aware reward modeling for long horizon robot manipulation. In International Conference on
+Learning Representations (ICLR), 2026.
+17
+
+================================================== PAGE 18 len 2936 ==================================================
+Appendices
+A ABC-130K Task Taxonomy
+18
+B
+Training & Model Details
+19
+B.1
+Data Loading . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+19
+B.2
+Architecture Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+21
+B.3
+Training Details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+22
+B.4
+Architecture Sizes and FLOPS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+22
+C Real Robot Setup
+22
+C.1
+Hardware . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+22
+C.2
+Real Robot Code
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+23
+D Inference Optimization
+23
+E
+Single-task Finetuning
+25
+E.1
+Task description and evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+25
+E.2
+Finetuning recipe . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+25
+F
+DAgger Infrastructure
+25
+G Evaluation Details
+26
+H Policy Conditioning
+27
+H.1
+Operator-ID conditioning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+27
+H.2
+Action prefix conditioning
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+28
+H.3
+Subtask conditioning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+28
+A
+ABC-130K Task Taxonomy
+We organize the 195 tasks in ABC-130K into the following 7 primitive categories with a goal to group
+the tasks with similar contact modes and precision requirements together.
+1. Pick-and-Place (67 tasks, 793 h). Simple transfers: place cup by coaster, place snacks into paper
+bag and multi-step variants involving packing, organizing, or bussing: pack a student bag, place
+the mixed dishes into the plastic bin. Tasks range from single-object grasps to sequences requiring
+5–10 objects placed in a target arrangement.
+2. Fine Pick-and-Place (39 tasks, 736 h). Millimeter-level precision tasks: for example, insert-
+ing credit cards into holders, building block towers, and pinning/removing brooches, phone case
+installation, and inserting photos into frames.
+3. Folding (36 tasks, 883 h). Deformable cloth manipulation spanning garment types: t-shirts, long-
+sleeve shirts, shorts, trousers, skirts, tank tops, towels, as well as non-garment deformables such
+as paper boxes and paper planes.
+4. Insertion/Ejection (19 tasks, 441 h). Peg-in-hole-style skills generalized to everyday objects:
+plugs into sockets, pens into caps, batteries into remote controls, earbuds into charging cases, and
+keys onto keyrings and caps onto bottles.
+5. Tool Use (16 tasks, 321 h). Tasks requiring an intermediate tool or mechanism: zipping jackets,
+sealing zip-top bags, locking and unlocking with keys, and sweeping with a dustpan.
+6. Sorting (8 tasks, 205 h). Multi-object classification tasks: sorting LEGOs by color, pills into
+containers, screws and nuts by type, and chemistry lab equipment.
+18
+
+================================================== PAGE 19 len 2666 ==================================================
+Packing luggage
+Place fruits in bag
+Organize toys on shelf
+Place snacks in bag
+Place glasses in tray
+Build block tower
+Load dishrack
+Place coffee filter
+Insert credit cards
+Set up chess pieces
+Fold paper box
+Fold skirt pile
+Fold t-shirt pile
+Roll up utensils
+Attach microphone
+Cap pens
+Lock with key
+Seal zip-top bag
+Organize lab equipment
+Tie flower bouquet
+Figure 16: Representative top-camera frames for each task category. Pick-and-Place (row 1, all 5):
+Packing luggage, Place fruits in bag, Organize toys on shelf, Place snacks in bag, Place glasses in tray.
+Fine Pick-and-Place (row 2, all 5): Build block tower, Load dishrack, Place coffee filter, Insert credit
+cards, Set up chess pieces. Folding (row 3, cells 1–4): Fold paper box, Fold skirt pile, Fold t-shirt pile,
+Roll up utensils. Insertion/Ejection (row 3 cell 5, row 4 cell 1): Attach microphone, Cap pens. Tool
+Use (row 4, cells 2–3): Lock with key, Seal zip-top bag. Sorting (row 4 cell 4): Organize lab equipment.
+Untying/Tying (row 4 cell 5): Tie flower bouquet.
+7. Untying/Tying (10 tasks, 175 h). Knot-tying on plastic bags, shoe-lacing, tying bouquets of flow-
+ers, and cable/headphone wrapping and untangling—long, thin deformables requiring bimanual
+coordination and contact-rich manipulation.
+Examples of top-camera frames from each task category are provided in Figure 16. Task names in the
+dataset are often minor grammatical variants of each other. For example, sorting legos into containers
+and sort the legos into the containers are two distinct task descriptions in the dataset that have the
+same qualitative behavior. We adjust for this duplication in the our provided statistics by counting such
+variants as one task.
+B
+Training & Model Details
+This appendix provides the implementation details for reproducing our results. We first describe abcdl,
+our custom dataloader, together with the MP4-plus-binary episode format used to load thousands of
+hours of video efficiently in distributed training. We then provide the training and architecture details
+for ABC-DiT and ABC-VLA. Finally, we report the model sizes and FLOP counts. All models are
+trained on NVIDIA H200 GPUs.
+B.1
+Data Loading
+We develop a custom dataloader, abcdl (A Behavior Cloning Dataloader) to facilitate fast loading of
+training data in our pipeline. Many data loading pipelines do not scale to loading thousands of hours
+of data in a distributed training setup; hence part of making ABC-130K useful is releasing a dataloader
+along with our dataset that can facilitate distributed dataloading at such a scale.
+The training data format consists of two files per episode: 1) an MP4 containing the concatenated
+19
+
+================================================== PAGE 20 len 2482 ==================================================
+naive
+after constant
+keyframe encoding
+0
+2
+4
+6
+8
+10
+12
+byte offset (MB)
+whole-file index scan
+one GOP decoded
+moov / frame index
+never read
+Figure 17: Efficient frame access for fast data loading. Encoding keyframes more frequently and in a
+manner that allow for an analytically reconstructed frame index make random frame access nearly free.
+To read one frame from a video, torchcodec’s default scans the entire file to build its frame index (top).
+Correctly encoding the file allows us to compute the index analytically, meaning we only need to read
+the file header plus frames since the closest keyframe, leaving the rest of the file untouched, reducing
+disk pressure. The decoded frame is three vertically stacked camera views.
+1
+8
+16
+32
+64
+128
+0
+100
+200
+300
+400
+500
+Dataloader workers
+Decodes / sec
+naive (GOP 250, no CFR)
+non-naive (GOP 30 + CFR)
+Figure 18: Random-frame decode throughput.
+Decodes per second versus dataloader workers on
+a local filesystem. Fixing the encoding options and
+dataloader args improves throughput.
+naive
+(GOP 250, no CFR)
+non-naive
+(GOP 30 + CFR)
+0.1
+1
+10
+9.75
+0.14
+MB per decode (log)
+Figure 19: Per-decode read volume. Mean MB
+requested from the filesystem per decode (log
+scale). CFR frame mapping cuts per-decode reads
+by ∼70× (9.75MB →0.14MB) on average, reduc-
+ing wall-time on bandwidth-constrained dataload-
+ing.
+camera views, 2) and a binary file containing the states and actions. Our data loading philosophy is
+to keep our data in an extremely simple format while still facilitating extremely fast on the fly load-
+ing of data. From this perspective, MP4 provides great advantages as it is readable by all manner of
+video players, IDEs, etc., for convenient viewing without special software, while still being a highly
+compressed format and while providing many format options to facilitate fast dataloading. Our system
+facilitates either loading quickly from a locally mounted file system or streaming data from cloud object
+storage such as s3, simply by changing the backend. In the case of local data loading, files are sharded
+by episode and downloaded onto individual nodes. The videos are encoded using the H.264 format. We
+use several format options to make decoding easy:
+• +faststart moves the MP4 moov atom to the front of the file meaning that the whole file doesn’t
+need to be read before decoding can begin.
+• We disable MP4 B-frames so that frames only depend on the most recent keyframe, and not on
+frames after them.
+20
+
+================================================== PAGE 21 len 3521 ==================================================
+Inputs
+Camera Views
+Put dishes in
+the dishrack.
+VLM Backbone
+Gemma
+LM
+Token Stream
+DiT Action Head
+Denoised action chunk a0
+Noised action tokens aτ
+Task Prompt
+SigLIP
+Encoder
+Pooling Queries
+Condition Vector
+Figure 20: ABC-VLA pooled adaLN architecture. ABC-VLA uses a Gemma 3 VLM backbone,
+attention-pools the final VLM hidden states into a compact feature vector, and projects the result to an
+adaLN conditioning vector for the lightweight DiT action head.
+• Crucially, we encode the video with constant GOP (Group of Pictures, i.e. a keyframe + following
+frames compressed relative to it). This means that the keyframes in the video are in deterministic
+positions.
+In practice, we encode videos with GOP=30, corresponding to one keyframe per second for 30-FPS
+video. A fixed GOP and constant ticks per frame allow us to reconstruct the file index. The reconstructed
+index is passed to torchcodec’s VideoDecoder object in order to facilitate fast loading (see Figure
+17). We note that all of these speedups are achieved by using existing APIs in pure Python, keeping our
+system readable and maintainable. For remote data loading, we make a custom Python file-like object
+which facilitates reading bytes from the given remote storage source (e.g. s3 or GCS), and is passed to
+torchcodec.
+To handle multiple camera streams, we simply stack them into a single MP4 file. This cuts down the
+number of requests to have multiple camera streams by a factor of 3 (assuming 3 cameras, more in the
+general case). This is important especially when streaming from a remote data source. We also support
+loading multiple consecutive frames; this can be done at minimal bandwidth / CPU decoding cost as the
+keyframe for subsequent frames is more likely than not already loaded.
+While providing speed at the low level, our dataloading infrastructure facilitates the ability for practi-
+tioners to freely mix datasets from different sources and weight them independently. This is an essential
+feature for many experiments – for example for experimenting with different slices of pretraining mixes
+at the pretraining scale, or for experiments with intervention data at the single task scale.
+B.2
+Architecture Details
+ABC-DiT, the DINOv3-xattn version in Table 1, uses DINOv3 [17] ViT-B. We use 12 query tokens
+per image and share the weights of the DINO encoder across all three images. We use a modified DiT
+architecture with 32 layers, a hidden size of 1536, 24 heads, and an MLP ratio of 4.
+ABC-VLA, the Pooled adaLN version in Table 1, uses Gemma 3 [19] 4B backbone. The im-
+ages are fed into the context through the SigLIP encoder. The robot proprioception is fed through a
+two-layer MLP with hidden size 256 to produce a 2560-dimensional vector that is fed into the token
+stream, followed by the task prompt and a <action_start> token. We use 8 learnable query tokens to
+attention-pool the tokens of the last layer of the Gemma VLM. This produces 8 512-dimensional vectors
+that are flattened. The proprioception is also linearly projected to a 512-dimensional embedding. The
+4096-dimensional vector corresponding to the VLM features is concatenated with this proprioception
+embedding as well as a 512-dimensional embedding of the diffusion timestep. This combined 5120-
+dimensional vector is then fed through a small MLP to be projected down to a 512-dimensional vector
+and is used for adaLN modulation in the diffusion head. The diffusion head is relatively small with 8
+layers, hidden size 512, 8 heads, and an MLP ratio of 4.
+21
+

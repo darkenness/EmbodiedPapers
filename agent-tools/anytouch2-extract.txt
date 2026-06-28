@@ -1,0 +1,851 @@
+=== page 1 ===
+2026-02-11
+AnyTouch 2: General Optical Tactile Representation
+Learning For Dynamic Tactile Perception
+Ruoxuan Feng1,2,3, Yuxuan Zhou4, Siyu Mei4, Dongzhan Zhou5, Pengwei Wang3,
+Shaowei Cui6,3, Bin Fang7,3, Guocai Yao3,8, Di Hu1,2,3,B
+1Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, China, 2Beijing Key
+Laboratory of Research on Large Models and Intelligent Governance, 3Beijing Academy of Artificial
+Intelligence, 4Beijing Jiaotong University, 5Shanghai AI Laboratory, 6Institute of Automation, Chinese
+Academy of Sciences, 7Beijing University of Posts and Telecommunications, 8State Key Laboratory of
+Multimedia Information Processing, Peking University
+B Corresponding author
+Abstract
+Real-world contact-rich manipulation demands robots to perceive temporal tactile feedback, capture subtle
+surface deformations, and reason about object properties as well as force dynamics. Although optical tactile
+sensors are uniquely capable of providing such rich information, existing tactile datasets and models remain
+limited. These resources primarily focus on object-level attributes (e.g., material) while largely overlooking
+fine-grained tactile temporal dynamics during physical interactions. We consider that advancing dynamic
+tactile perception requires a systematic hierarchy of dynamic perception capabilities to guide both data
+collection and model design. To address the lack of tactile data with rich dynamic information, we present
+ToucHD, a large-scale hierarchical tactile dataset spanning tactile atomic actions, real-world manipulations,
+and touch-force paired data. Beyond scale, ToucHD establishes a comprehensive tactile dynamic data
+ecosystem that explicitly supports hierarchical perception capabilities from the data perspective. Building
+on it, we propose AnyTouch 2, a general tactile representation learning framework for diverse optical
+tactile sensors that unifies object-level understanding with fine-grained, force-aware dynamic perception.
+The framework captures both pixel-level and action-specific deformations across frames, while explicitly
+modeling physical force dynamics, thereby learning multi-level dynamic perception capabilities from
+the model perspective. We evaluate our model on benchmarks that covers static object properties and
+dynamic physical attributes, as well as real-world manipulation tasks spanning multiple tiers of dynamic
+perception capabilities—from basic object-level understanding to force-aware dexterous manipulation.
+Experimental results demonstrate consistent and strong performance across sensors and tasks, highlighting
+the framework’s effectiveness as a general dynamic tactile perception model.
+Email: Ruoxuan Feng at fengruoxuan@ruc.edu.com, Di Hu at dihu@ruc.edu.com
+Project Page: https://gewu-lab.github.io/AnyTouch2/
+Code: https://github.com/GeWu-Lab/AnyTouch2
+1
+Introduction
+Tactile perception is a cornerstone of human interaction with the physical world, providing rich contact information that
+complements vision and audition. It enables fine-grained understanding of subtle deformations and force dynamics that
+1
+arXiv:2602.09617v1  [cs.RO]  10 Feb 2026
+
+
+=== page 2 ===
+Force
+Data
+Manipulation 
+Data
+Random Action 
+Press Only 
+Specific Action 
+Learning object-level 
+semantic properties
+TVL  VisGel
+Touch and Go
+……
+TacQuad
+YCB-Slide
+Touch-Slide
+……
+Tactile Dynamic Pyramid
+ToucHD (Sim)
+ToucHD (Force)
+FeelAnyForce
+ToucHD (Force)
+ToucHD (Mani)
+Tier 5: Basic Properties
+Learning initial 
+dynamic cues of 
+sliding and rotating
+Supporting simple tasks 
+with structured dynamic 
+interactions
+Supporting various 
+complex real-world 
+manipulation tasks
+Supporting precise 
+force-sensitive 
+manipulation tasks
+Tier 1:  Physical Dynamics
+Data 
+Rarity
+Dynamic 
+Capabilities
+ToucHD: Tactile Hierarchical Dynamic Dataset
+Tier 4: Basic Dynamic Contacts
+Indenter
+Touch-Force Pairs
+Simulation Data
+Sensor Backgrounds
+Tier 3:  Action-Specific Dynamics
+Tier 2:  Manipulation Dynamics
+722,436
+Frames
+5 Sensors
+71
+Indenters
+1,118,896
+Frames
+5 Sensors
+1,043
+Objects
+6 Actions
++
+Time
+Paired Action Data
+Move
+Right
+Rotate
+CW
+→
+3D Objects
+Sensors
+Force Collection
+→
+Force Data
+Manipulation Data
+Touch-Vision Pairs
+584,842
+Frames
+3 Sensors
+46 Tasks
+Sensor
+Set 1
+Sensor
+Set 2
+UMI with Tactile Sensors
+GelSight Mini
+DM-Tac W
+Figure 1 Tactile Dynamic Pyramid and ToucHD dataset. We organize tactile pre-training data into 5 tiers based on data rarity
+and the complexity of the dynamic perception capabilities they support. The datasets shown in black font are existing ones. Most
+current datasets fall into the lower tiers (4 and 5), while higher tiers (1, 2, and 3) remain notably scarce. To bridge this gap, we present
+ToucHD, a large-scale hierarchical dynamic tactile dataset spanning tactile atomic actions, real-world manipulations, and touch–force
+paired data. ToucHD is designed to enrich high-tier tactile data and establish a complete dynamic tactile data ecosystem, thereby
+comprehensively supporting dynamic tactile perception.
+are essential for various contact-rich tasks [1–4]. With the rapid progress of high-resolution optical tactile sensors [5, 6],
+robotics is poised to enter a new era of dynamic tactile perception, where robots will be able to perceive temporal
+variations in contact, force, and material interactions to accomplish increasingly complex real-world tasks.
+In stark contrast, existing tactile datasets and models remain largely limited to static object-level properties, due to the
+absence of a systematic perspective on dynamic tactile perception, thereby overlooking the rich temporal dynamics of
+touch and the underlying force-related physical principles. Many large-scale datasets primarily rely on press-only actions
+to collect material properties like texture and hardness [7, 8], with limited extensions to random sliding or rotation [9–11].
+A recent press-based touch–force dataset [12] provides preliminary physical grounding but still lacks richer dynamic
+interactions. Similarly, mainstream tactile pre-training models, often adapted from image-based self-supervised [13]
+or multi-modal alignment frameworks [14], struggle to capture fine-grained deformations and force-aware dynamics.
+Deficiencies in both datasets and models for supporting dynamic perception capabilities required by complex tasks
+ultimately limit the effectiveness of tactile pre-training in manipulation [15].
+To establish a systematic paradigm for dynamic tactile perception, we first introduce a tactile dynamic pyramid that
+organizes tactile data into five tiers based on the complexity level of the perception capabilities they support, as shown
+in Fig. 1. Most existing datasets reside at the lowest Press Only and Random Action tiers, offering limited action
+diversity and supporting only static attributes or shallow surface-level dynamics. In contrast, higher tiers, though far
+more challenging to collect, enable richer perception capabilities: Specific Action data facilitate learning structured
+tactile dynamic semantics, Manipulation data capture temporally evolving contact patterns crucial for dexterous skills,
+and Force data explicitly ground tactile dynamics in physical force properties. To fill this critical gap, we introduce
+ToucHD, a large-scale dataset with 2,426,174 contact samples, designed as a Tactile Hierarchical Dynamic resource to
+enrich the higher tiers. By incorporating diverse tactile sensors and techniques, ToucHD integrates simulated atomic
+action data, real-world manipulation data collected with a modified FastUMI [16], and extensive touch–force pairs
+obtained from 71 indenters. Together, these hierarchical components form a systematic d
+
+=== page 3 ===
+the hierarchical capabilities outlined by our dynamic pyramid. Concretely, we enhance sensitivity to subtle temporal
+deformations via frame-difference reconstruction, promote semantic-level action understanding through action matching,
+and model the underlying physical properties by predicting temporal force variations from large-scale touch–force pairs.
+Collectively, these components yield a unified representation that bridges object-level semantics, dynamic interaction
+modeling, and physical reasoning across all tiers, offering a solid foundation for diverse downstream tasks.
+We evaluate AnyTouch 2 on benchmarks spanning static object properties, dynamic physical prediction, and real-world
+manipulation tasks across all tiers of the tactile dynamic pyramid. Experimental results show that our approach delivers
+consistently strong performance across both static and dynamic tactile perception tasks, validating its effectiveness as a
+general tactile representation framework. By grounding our framework in the tactile dynamic pyramid, we hope this
+work lays a solid foundation for advancing the era of dynamic tactile perception and inspires future research toward
+more dexterous, physically grounded robotic intelligence.
+2
+Related Works
+2.1
+Large-Scale Tactile Dataset
+Early tactile datasets were typically collected via handheld or robotic pressing, focusing on object-level semantic
+properties such as material and hardness [7, 8, 17–19]. These press-only datasets exhibit limited dynamic variation
+and primarily support learning static tactile features. Some datasets expand this paradigm by applying simple random
+actions on object surfaces to capture basic dynamic interactions [9–11, 20]. While such data can help models gain an
+initial understanding of tactile dynamics, they remain insufficient for supporting complex dynamic tasks like dexterous
+manipulation. [15] collected a touch–force paired dataset by pressing sensors with different indenters, offering initial
+insight into physical contact properties, but the dataset still lacks richer dynamics like sliding or rotation. In this work,
+we collect the largest hierarchical dynamic tactile dataset to address the scarcity of high-tier tactile data with rich
+dynamic interactions and paired force measurements.
+2.2
+Optical Tactile Representation Learning
+Optical tactile sensors can capture high-resolution spatio-temporal deformations of contact surfaces, enabling fine-
+grained perception of object properties and interaction dynamics. Leveraging the image-based nature of optical tactile
+data, recent studies have explored leveraging vision-related representation learning, using visual self-supervised learning
+methods [13] for fine-grained feature learning [10, 21, 22] and multi-modal alignment with vision and language for
+semantic-level understanding [11, 23–25]. To handle sensor heterogeneity, some works employ joint training [22],
+alignment [23, 26], or cross-sensor matching [11]. More recent works have explored dynamic tactile representation
+learning by transferring self-supervised video learning techniques [10, 11, 27], allowing models to capture temporal
+deformation patterns. In this work, we unify the strengths of previous methods by integrating object-level feature
+understanding with hierarchical dynamic tactile perception capabilities, resulting in a general tactile representation
+capable of supporting a variety of downstream tasks.
+2.3
+Dynamic Tactile Perception
+While early tactile models primarily focused on static object-level properties, real-world contact-rich manipulation
+requires perceiving the temporal tactile dynamics and reasoning about underlying physical principles [3, 28]. Recent
+studies have begun to explore dynamic tactile perception in both real and simulated environments. A common approach
+adapts visual models to process continuous tactile inputs and model temporal variation, but often without tailoring them
+to the unique characteristics of tactile data [2, 29, 30]. [1] enhanced dynamic perception for manipulation tasks by
+forecasting future tactile signals. [27] proposed a masking strategy tailored to tactile videos, enhancing the capture of
+simple physical properties. [31] further incorporated force prediction as an auxiliary task to better model interaction
+dynamics. In parallel, advances in tactile simulators have enabled simple dynamic interactions and manipulation with
+tactile feedback in simulation [32, 33]. For instance, [15] built a manipulation benc
+
+=== page 4 ===
+3
+Tactile Hierarchical Dynamic Dataset
+As a primary medium of human interaction with the physical world, touch exhibits rich and intricate dynamic charac-
+teristics. Capturing these dynamics requires not only advanced sensors but also large-scale, high-quality datasets that
+reflect the temporal and physical nature of tactile interactions. However, most existing tactile datasets remain limited to
+simple paradigms such as pressing or random sliding, providing insufficient support for complex dynamic perception.
+To address this gap, we systematically establish a hierarchy of dynamic perception capabilities and propose a tactile
+dynamic pyramid that stratifies tactile data into five tiers based on the complexity of the dynamic perception capabilities
+they support, as shown in Fig. 1. This pyramid provides a principled framework to guide the collection of more
+informative dynamic tactile data. Specifically: (T5) Press Only data mainly support recognition of object-level attributes
+with minimal temporal variation; (T4) Random Action data introduce limited temporal changes, enabling perception of
+surface-related dynamics but lacking task relevance; (T3) Specific Action data capture structured dynamics associated
+with atomic interactions, facilitating action-level tactile understanding; (T2) Manipulation data reflect task-driven,
+temporally evolving contact changes, essential for learning real-world manipulation skills; and (T1) Force data explicitly
+ground tactile dynamics in physical force principles, enabling reasoning about force–deformation relationships and
+supporting fine-grained, force-sensitive manipulation tasks. As the tier level increases, data collection becomes more
+challenging or requires stricter constraints, and the data rarity increases. However, higher-tier data provides richer
+annotations or more realistic manipulation scenarios, enabling the development of stronger dynamic tactile perception
+capabilities. Most existing tactile datasets reside in Tier 4 and 5, offering insufficient support for advanced dynamic
+perception tasks such as dexterous manipulation, while higher-tier data remain scarce. [12] introduced a press-based
+touch–force dataset, but it excludes complex interactions like sliding, restricting its support for complex dynamic
+perception. More details of the criteria for the hierarchical structure are provided in Appendix A.
+To address this gap, we present ToucHD, a large-scale tactile dataset with 2,426,174 contact samples designed as a
+Tactile Hierarchical Dynamic resource to enrich higher-tier dynamic tactile data. Specifically, the dataset comprises
+three subsets corresponding to the highest 3 tiers of the pyramid:
+Simulated Atomic Action Data (Sim). Using an IMPM-based simulator [34], we collect 1,118,896 multi-sensor contact
+frames from five optical tactile sensors performing four atomic actions—sliding left/right and rotating clockwise/coun-
+terclockwise—on 1,043 objects sourced from ObjectFolder [35] and OmniObject3D [36]. We further augment the data
+by rotating the two sliding actions, thereby generating additional upward and downward sliding samples. This data
+corresponds to Tier 3 (Specific Action) of the tactile dynamic pyramid, supporting explicit learning of tactile variations
+induced by structured dynamic interactions.
+Real-World Manipulation Data (Mani). We modify FastUMI [16] by equipping its two grippers with different tactile
+sensors, enabling efficient collection of multi-sensor tactile manipulation data. Using two distinct sets of sensors, we
+collect 584,842 contact frames from 46 carefully designed manipulation tasks, while simultaneously recording the
+interaction videos. This portion of the data corresponds to Tier 2 (Manipulation Data) and explicitly supports tactile
+pre-training models in capturing fine-grained dynamic tactile variations during real manipulation tasks.
+Touch-Force Paired Data (Force). We collect 722,436 touch–force pairs using five carefully selected tactile sensors. All
+sensors are mounted on a fixed base, while 71 distinct indenters are sequentially attached to the end-effector of a robotic
+arm. Under programmatic control, each indenter performs sliding motions in four directions—forward, backward, left,
+and right—across the sensor surface, while a wrist-mounted force sensor records 3D contact force sequences. These
+touch–force pairs correspond to Tier 1 (Force Data), providing explicit supervision for models to perceive fine-grained
+contact forces a
+
+=== page 5 ===
+AnyTouch 2
+Encoder
+Masked
+Tacle Video
+Frame
+Decoder
+Frame Diﬀ
+Decoder
+Time
+Time
+Contact Video Reconstrucon
+Video Frame Diﬀ Reconstrucon
+Pixel-Level Dynamic Details
+“The tactile sensor
+is pressing the top
+of a rough,
+textured orange…”
+Text
+Encoder
+Vision
+Encoder
+Object
+Head
+Tacle Video
+Semantic-Level Tactile Features
+AnyTouch 2
+Encoder
+Acon 
+Head
+Same Object?
+AnyTouch 2
+Encoder
+Dynamic Physical Properties
+Mul-Modal
+Aligning
+Cross-Sensor
+Matching
+Same Action?
+Acon Matching
+Force
+Decoder
+Delta Force
+Decoder
+Tacle Video
+𝑭𝒙, 𝑭𝒚, 𝑭𝒛
+Time
+𝑭𝒙
+Time
+𝑭𝒚
+Time
+𝑭𝒛
+Touch-Force
+Pair
+𝚫𝑭𝒙, 𝚫𝑭𝒚, 𝚫𝑭𝒛
+Delta Force
+Predicon
+Force
+Predicon
+Class Token
+Speciﬁc Sensor Token
+Universal Sensor Token
+Masked Token
+Dynamic Enhanced Module
+Spao-Temporal Patch
+Figure 2 Overview of AnyTouch 2. Our model unifies object-level tactile semantics with fine-grained dynamic and physical
+perception, learning a general tactile representation that supports a broad spectrum of downstream tasks. By incorporating multi-level
+dynamic enhanced modules aligned with the tiers of the tactile dynamic pyramid, it strengthens sensitivity to subtle tactile variations
+and improves reasoning about the physical properties underlying dynamic interactions.
+perception capabilities, as shown in Fig. 2. Specifically, we start from pixel-level dynamic detail learning as the
+foundation (Sec. 4.1), extend to semantic-level tactile feature understanding (Sec. 4.2), and further advance to modeling
+dynamic physical properties (Sec. 4.3), aligning with the hierarchical tiers in our tactile dynamic pyramid.
+4.1
+Pixel-Level Dynamic Details
+Understanding pixel-level tactile deformations forms the basis of higher-level dynamic perception. To enhance the
+capacity for capturing fine-grained temporal changes, we employ a video masked autoencoder [37] to learn diverse
+deformation patterns from consecutive frames across multiple optical sensors. To focus on deformations rather
+than sensor-specific backgrounds, we subtract the background frame from each frame, yielding a normalized input
+T = (T1, T2, ..., TN) ∈RN×H×W ×3, where N is the number of frames and H ×W denotes the shape of tactile images.
+We partition T into non-overlapping 3D spatio-temporal tokens of size s × h × w where s is the tube size and h × w
+denotes the patch size, yielding a token sequence of length M = N
+s × H
+h × W
+w . We apply tube masking with a mask
+ratio ρ, and reconstruct the masked video into ˆT via a frame decoder. The training loss Lori
+rec is defined as the mean
+squared error (MSE) over masked tokens:
+Lori
+rec =
+1
+N|ΩM|
+N
+X
+n=1
+X
+p∈ΩM
+| ˆTn(p) −Tn(p)|2,
+(1)
+where p is the token index and ΩM is the set of masked tokens. Unlike natural videos, tactile deformations are
+highly localized and subtle, requiring explicit mechanisms to highlight small frame-to-frame changes. To this end,
+we further introduce frame-difference reconstruction to strengthen the model’s sensitivity to fine-grained temporal
+variations. Specifically, we subtract the first frame T1 of the video T from each subsequent frame to obtain the frame
+differences D = (D2, ..., DN) ∈R(N−1)×H×W ×3, where Dn = Tn −T1, n = 2, ..., N. A frame-difference decoder
+is simultaneously trained to reconstruct D from masked tokens with an MSE loss:
+Ldif
+rec =
+1
+N|ΩM|
+N
+X
+n=2
+X
+p∈ΩM
+| ˆDn(p) −Dn(p)|2.
+(2)
+5
+
+
+=== page 6 ===
+The total pixel-level loss is defined as LPixel = Lori
+rec + Ldif
+rec. By jointly reconstructing both the original frames and
+their frame differences, the model learns to capture both global deformation patterns and subtle fine-grained temporal
+variations essential for dynamic perception. This dual reconstruction strategy establishes a strong foundation for
+higher-level semantic and physical property perception.
+4.2
+Semantic-Level Tactile Features
+While pixel-level deformation modeling lays the foundation for dynamic tactile perception, a general tactile represen-
+tation also requires capturing semantic-level features that generalize across objects, sensors, and actions. To achieve
+this, we first leverage multi-modal alignment to embed tactile data into a shared semantic space grounded in perceptual
+and linguistic concepts such as object identity, material properties, and interaction descriptions. Following the CLIP
+paradigm [11, 14], tactile features are aligned with their paired visual and textual features as:
+LAlign = αT V
+2
+(LT →V + LV →T ) + αT L
+2 (LT →L + LL→T ),
+(3)
+where LT →V , LV →T and LT →L, LL→T are tactile–visual and tactile–language contrastive losses respectively, while
+αT V , αT L control their aligning strength. The full formulations are provided in Appendix G. In parallel, we employ
+cross-sensor matching [11] to align tactile signals from different sensors that contact the same object, promoting sensor-
+invariant object-level feature learning. For each tactile video T from TacQuad, ToucHD (Sim), or ToucHD (Force),
+we sample a positive T+
+obj within these datasets that contacts the same object but originates from a different sensor.
+Additionally, a negative T−
+obj from a different object is randomly drawn from the batch. For each triplet (T, T+
+obj, T−
+obj),
+the model predicts similarity scores between T and the other samples, and is trained with a binary cross-entropy loss to
+distinguish these pairs as:
+Lobj = −log σ(sim(T, T+
+obj)) −log
+ 1 −σ(sim(T, T−
+obj))
+
+,
+(4)
+where σ(·) denotes the Sigmoid function and sim(·, ·) represents the similarity score computed from the CLS tokens of
+the two samples through a linear head.
+While existing components mainly focus on static attribute learning, we introduce action matching to capture the
+semantics of structured dynamic tactile interactions. In particular, this objective guides the model to embed atomic action
+information into the representation space. The tactile videos from ToucHD (Sim) and ToucHD (Force) are grouped into
+8 atomic actions, including pressing, leaving, sliding (4 directions), and rotating (2 directions). The model is trained to
+cluster representations of the same action while separating different ones. This encourages the encoder to recognize
+the characteristic temporal patterns, motion directions, and frame-to-frame deformations associated with each action,
+effectively embedding semantic-level action information into the tactile representation. Concretely, for a tactile video
+T, we sample a positive T+
+act from the same action class (potentially across different objects or sensors) within these
+datasets, and a negative T−
+act from a different action class within the batch. Similar to the cross-sensor matching, we
+train the model to pull together frame sequences of the same action while pushing apart sequences of different actions:
+Lact = −log σ(sim(T, T+
+act)) −log
+ 1 −σ(sim(T, T−
+act))
+
+.
+(5)
+This objective explicitly incorporates semantic-level action information into the tactile representation, improving the
+model’s understanding of dynamic interactions and supporting downstream manipulation tasks that depend on action-
+aware perception. The total matching loss is then LMatch = Lobj + Lact. By jointly optimizing these objectives, the
+model captures both static object-level and dynamic action-aware semantic features, effectively bridging low-level
+tactile signals with high-level perceptual understanding. However, the model still falls short of fully understanding the
+underlying physical properties that drive these interactions.
+4.3
+Physical-Level Dynamic Properties
+Understanding the physical properties underlying tactile interactions requires integrating knowledge of both object-level
+attributes and action dynamics. Among these properties, contact force is fundamental, as it directly governs how objects
+deform, slip, or respond during manipulation [38]. Accurately modeling force dynamics not only provides explicit
+supervision for th
+
+=== page 7 ===
+underlying tactile interactions. Using the large-scale touch–force pairs (Tn, Fn) from ToucHD (Force), the model is
+trained to predict the 3D contact force F ∈R(N−1)×3 for each frame in a tactile video T, excluding the first frame. This
+enables the model to directly associate dynamic tactile deformations with their physical magnitudes. To further enhance
+sensitivity to fine-grained dynamic deformations, we introduce delta-force prediction, which focuses on capturing the
+temporal variations of contact forces. The model is trained to predict the force increments ∆F ∈R(N−1)×3 where
+∆Fn = Fn −Fn−1, n = 2, ..., N. This shifts the focus from static force values to dynamic transitions, encouraging the
+encoder to attend to subtle temporal cues and continuous deformation patterns. The force and delta-force decoders are
+jointly trained with an L1 Loss:
+LForce =
+1
+3(N −1)||ˆF −F||1 +
+1
+3(N −1)|| ˆ
+∆F −∆F||1.
+(6)
+By explicitly predicting the 3D contact forces and their temporal variations from tactile videos, the model can bridge
+high-level semantic understanding with fine-grained dynamic properties. This enables a comprehensive and physically
+grounded representation across all tiers of the tactile dynamic pyramid, supporting dexterous manipulation and robust
+generalization across tasks and objects.
+4.4
+Training Recipe
+Our model integrates tactile perception tasks spanning the hierarchical tiers of the tactile dynamic pyramid, from
+low-level pixel deformations to high-level semantic and force-sensitive interactions. To jointly optimize these multi-level
+objectives while mitigating task interference, we adopt a curriculum task scheduling strategy with task-specific start
+iterations and gradually increasing weights. Concretely, pixel-level reconstruction, as the foundation of tactile perception,
+is trained from the beginning with the highest weight. Higher-level tasks, including semantic tactile feature learning and
+dynamic physical property modeling, are introduced after several iterations i with gradually increasing weights λi
+task.
+This strategy ensures the model first captures robust low-level tactile patterns before learning more complex capabilities.
+The total loss L of our framework is defined as:
+Ltotal = LPixel + λi
+AlignLAlign + λi
+MatchLMatch + λi
+ForceLForce,
+λi
+task = max(0, i −itask)
+itotal −itask
+λmax
+task,
+task ∈{Align, Match, Force},
+(7)
+where itask is the task start iteration and λmax
+task denotes the maximum task-specific weight.
+5
+Experiments
+In this section, we comprehensively evaluate our model’s general tactile perception capabilities. We first test it on the
+benchmarks covering object-level properties understanding and dynamic physical attributes perception (Sec. 5.2), then
+on four real-world manipulation tasks spanning multiple tiers of the tactile dynamic pyramid, assessing its ability to
+generalize across hierarchical dynamic capabilities (Sec. 5.3).
+5.1
+Datasets and Baselines
+During pre-training, we filtered contact samples from 9 different tactile datasets, including: Touch and Go (TAG) [7],
+VisGel [18], ObjectFolder Real [19] , TVL [8], YCB-Slide [9], SSVTP [39], Octopi [20], TacQuad [11], and ToucHD.
+For downstream evaluation, we adopt TAG and Cloth [17] for object property understanding, and Sparsh [10] together
+with ToucHD Bench (10 unseen indenters) for dynamic physical understanding, covering 3 mainstream optical tactile
+sensors: GelSight [40], DIGIT [41], and GelSight Mini [42]. We compare the AnyTouch 2 model with representative
+tactile representation learning methods: UniTouch [23] and T3 [22] (single-frame input), and MAE (Sparsh), VJEPA
+(Sparsh) [10], and AnyTouch 1 [11] (multi-frame input). Single-frame models are fed two consecutive frames along the
+batch dimension to handle temporal data without architecture changes. To fairly compare and simultaneously evaluate
+the benefits of our ToucHD dataset, we also train an MAE (Sparsh)† model on the same training data, including ToucHD
+as AnyTouch 2. The detailed introduction is provided in Appendix C and D.
+7
+
+
+=== page 8 ===
+Table 1 Evaluation of object-level attribute understanding on ObjectBench and physical-level dynamic perception on SparshBench
+and our ToucHD Bench. The evaluation covers three mainstream optical tactile sensors: GelSight (GS), DIGIT (DG), and GelSight
+Mini (Mini). Green rows indicate static models that take a single frame as input, while blue rows denote dynamic models that process
+multiple consecutive frames. (S) marks the pre-trained Sparsh model, and † indicates the use of additional training data including
+ToucHD. Underlined numbers denote the second-best results.
+Method
+Object Bench
+Sparsh Bench
+ToucHD Bench
+TAG
+Cloth
+Pose
+Slip (Delta Force)
+Force
+Force
+Acc(↑) Acc(↑) Acc(↑)
+F1 Score(↑) / RMSE(↓)
+RMSE(↓)
+RMSE(↓)
+GS
+GS
+DG
+DG
+Mini
+DG
+Mini
+DG
+Mini
+CLIP
+51.65
+26.76
+54.54
+33.13 / 174.39 85.47 / 177.67 1278.08 553.19 4880.94 4492.77
+UniTouch
+61.27
+20.43
+54.92
+35.43 / 169.26 87.73 / 211.81 1540.76 652.61 4146.55 4400.57
+T3
+52.51
+(Seen)
+55.01
+52.12 / 152.55 77.65 / 210.39 1535.84 640.39 4805.63 4877.66
+VJEPA (S)
+54.67
+18.66
+55.09
+83.33 / 105.63 97.00 / 121.31
+957.73
+428.56 4766.11 3208.10
+MAE (S)
+59.47
+19.40
+55.92
+83.30 / 98.33
+97.50 / 102.64
+821.26
+297.96 1953.82 3655.39
+MAE (S)†
+63.32
+36.84
+57.09
+85.67 / 92.47
+97.40 / 98.85
+741.67
+239.98 1714.84 2467.42
+AnyTouch 1
+80.82
+(Seen)
+56.22
+40.60 / 169.42 88.92 / 162.41 1235.11 488.31 3968.81 4050.45
+AnyTouch 2
+76.97
+42.31
+57.83
+86.66 / 87.80 97.96 / 80.83
+624.26 202.14
+894.32 1051.03
+5.2
+Offline Benchmark Evaluation
+To evaluate both object-level and dynamic physical perception, we conduct extensive experiments on Object Bench
+(TAG Material and Cloth Textile Classification), Sparsh Bench (Force Prediction, Pose Estimation and Slip Detection)
+and our ToucHD Bench (Force Prediction). For the Sparsh Force Prediction task, we evaluate the models on the unseen
+flat indenter. To more comprehensively evaluate the model’s understanding of force, we further conduct comparisons on
+the ToucHD Bench, which consists of 10 unseen indenters, and select 3 of them as testing indenters. To further probe
+fine-grained dynamic understanding, we add an additional evaluation within the Slip Detection task, where the model
+predicts 3D force changes across the input contact frame sequences. All reported root mean squared error (RMSE)
+values are measured in mN.
+As shown in Tab. 1, our AnyTouch 2 model achieves performance comparable to AnyTouch 1 on Object Bench, which
+primarily emphasizes static semantic features. At the same time, AnyTouch 2 consistently outperforms prior approaches
+across all other evaluation tasks requiring fine-grained dynamics and force-sensitive reasoning. This demonstrates
+its ability to unify object-level understanding with action-aware and force-grounded dynamic perception. Models
+leveraging multiple consecutive frames show clear advantages on the two dynamic benchmarks. In contrast, single-frame
+baselines sometimes perform even worse than CLIP model on Force Prediction and Slip Detection, largely because
+they lack temporal position embeddings and thus cannot capture the ordering of tactile inputs. This highlights the
+indispensable role of dynamic tactile perception and reveals the limitations of training solely on lower-tier datasets,
+which lack the temporal richness needed for capturing fine-grained dynamics. Interestingly, while MAE (Sparsh)
+and VJEPA (Sparsh) achieve competitive results on dynamic tasks, they still fall behind CLIP and UniTouch, which
+benefit from semantic-level multi-modal alignment, on Cloth classification. This further underscores the value of
+AnyTouch 2: enhancing dynamic perception while preserving robust static understanding, achieving a general tactile
+representation. Finally, augmenting MAE (Sparsh) with more training data, including our ToucHD dataset, yields
+consistent improvements across all tasks—even without additional objectives—highlighting the unique value of ToucHD
+as a high-tier dynamic tactile dataset.
+5.3
+Online Real-World Manipulation
+To evaluate our model in realistic scenarios, we design four challenging real-world manipulation tasks that explicitly
+span the tactile dynamic pyramid: Tactile Grasping (Tier 5), Whiteboard Wiping (Tier 4 & 3), USB Insertion (Tier 2)
+and Chip Moving (Tier 1), as shown in Fig. 3. These tasks comprehensively cover all tiers of the dynamic pyramid, from
+force-sensitive precision manipulation to object-level property recognition, providing a holistic benchmark for validating
+the model’s dynamic tactile per
+
+=== page 9 ===
+Tacle Grasping (Tier 5)
+Whiteboard Wiping (Tier 4 & 3)
+USB Inseron (Tier 2)
+Chip Moving (Tier 1)
+Figure 3 Real-world manipulation tasks. We evaluate models on real-world manipulation tasks that span the dynamic
+capabilities of different tiers in our tactile dynamic pyramid: Tactile Grasping (Tier 5), Whiteboard Wiping (Tiers 4 & 3), USB
+Insertion (Tier 2), and Chip Moving (Tier 1).
+Chip Moving (Tier 1)
+USB Inseron (Tier 2)
+Whiteboard Wiping (Tier 4 & 3)
+Tacle Grasping (Tier 5)
+UniTouch
+(Stac)
+T3
+(Stac)
+VJEPA (Sparsh)
+(Tier 4)
+MAE (Sparsh)
+(Tier 4)
+MAE (Sparsh)
+(Tier 2)
+AnyTouch 1
+(Tier 4)
+AnyTouch 2
+(Tier 1)
+Figure 4 Evaluation of real-world manipulation tasks. This evaluation spans DIGIT and GelSight Mini. Each dynamic model
+that takes consecutive tactile frames as input has a corresponding dynamic tier, which denotes the highest level of the training data
+and objectives used in our tactile dynamic pyramid shown in Fig. 1, reflecting the model’s dynamic perception capability. † denotes
+additional training data including ToucHD.
+success rate. Detailed task setups are provided in Appendix F.
+As shown in Fig. 4, static single-frame models perform significantly worse than dynamic models in real-world
+manipulation, particularly on higher-tier tasks, highlighting the necessity of dynamic perception for contact-rich
+manipulation. Moreover, depending on the tier of the training data and objectives, different dynamic perception models
+exhibit varying performance across different tiers of tasks. The three Tier 4 dynamic perception models achieve
+comparable performance on the Tier 5 Tactile Grasping task, while AnyTouch 1, which focuses more on static object
+attributes, lags behind MAE (S) and VJEPA (S), which better capture inter-frame variations on the Tier 4 & 3 task.
+However, all three models perform poorly on the higher-level Tier 1 and Tier 2 tasks that are not covered by their training
+data, revealing the limits of using only lower-tier dynamic data. By further incorporating ToucHD into the training data
+of MAE (S), the model gains dynamic perception capabilities across all other Tier 2 and lower-tier tasks, except accurate
+force perception for Tier 1, achieving significant improvements over the original MAE (S) in all tasks. Ultimately, by
+integrating the ToucHD dataset with multi-level dynamic enhanced modules, AnyTouch 2 achieves the strongest Tier-1
+dynamic perception capability, outperforming all baselines across all 4 real-world tasks, including the most delicate
+and challenging Tier 1 Chip Moving task. This demonstrates that the hierarchical dynamic data provided by ToucHD
+9
+
+
+=== page 10 ===
+Table 2 The impact of the modules in AnyTouch 2 on offline benchmarks. This evaluation spans three mainstream optical tactile
+sensors: GelSight (GS), DIGIT (DG), and GelSight Mini (Mini). The red arrow ↓indicates a significant drop in performance.
+Method
+Object Bench
+Sparsh Bench
+ToucHD Bench
+TAG
+Cloth
+Slip (Delta Force)
+Force
+Force
+Acc(↑) Acc(↑)
+F1 Score(↑) / RMSE(↓)
+RMSE(↓)
+RMSE(↓)
+GS
+GS
+DG
+Mini
+DG
+Mini
+DG
+Mini
+AnyTouch 2
+76.97
+42.31
+86.66 / 87.80
+97.96 / 80.83
+624.26
+202.14
+894.32
+1051.03
+- Diff Recon
+76.19
+41.33
+84.39↓/ 94.88↓
+97.81 / 100.84↓687.13↓225.18↓1009.44↓1123.47
+- Action Match
+76.93
+42.05
+84.42↓/ 87.98
+97.68↓/ 83.84
+643.75
+203.61
+896.21
+1082.39
+- Force Pred
+76.46
+41.45
+86.35 / 90.72
+97.88 / 96.34↓
+770.44↓254.10↓1646.95↓2008.38↓
+- MM Aligning
+63.84↓37.61↓
+87.31 / 81.44
+98.16 / 85.89
+589.13 193.73
+976.73↓
+972.37
+- ToucHD (Sim)
+76.54
+41.97
+84.68↓/ 88.78
+97.83 / 108.25↓
+624.39
+207.83
+992.96↓
+1113.56
+- ToucHD (Mani) 76.43
+41.01
+86.13 / 88.12
+97.93 / 80.96
+655.56
+208.46 1118.49↓1193.84
+- ToucHD (Force) 74.33↓40.87↓84.91↓/ 107.43↓97.85 / 109.37↓777.41↓266.43↓1792.49↓2424.68↓
+- ToucHD
+68.92↓40.39↓84.16↓/ 110.68↓97.67↓/ 136.36↓783.64↓257.95↓2448.89↓2982.46↓
+effectively supports higher-tier dynamic capabilities, and that our AnyTouch 2 framework effectively bridges all tiers of
+the tactile dynamic pyramid, establishing a solid foundation for general tactile perception in real-world manipulation.
+Beyond model comparisons, we also observe notable differences between the two optical tactile sensors. GelSight Mini,
+with its cleaner background and sharper deformation imaging, excels at capturing fine-grained details, outperforming
+DIGIT on the Tier-5 task using AnyTouch 2. In contrast, DIGIT’s higher acquisition frequency (30 Hz vs. GelSight
+Mini’s 18 Hz) provides more training samples and denser dynamic information, leading to superior performance on
+higher-tier manipulation tasks. These findings underscore not only the complementary strengths of different sensors but
+also the importance of models that can effectively integrate data from diverse tactile sensors.
+5.4
+Ablation Study
+To comprehensively evaluate the contributions of each module in our model to its general tactile perception capabilities,
+we conduct extensive ablation studies on the three benchmarks. The experimental results are shown in Tab. 2. When the
+action matching module is removed, the model’s performance on the slip detection task decreases. Similarly, removing
+the force prediction module leads to reduced performance on the force prediction and delta force prediction tasks.
+Furthermore, when the frame-difference reconstruction task, which serves as a fundamental fine-grained dynamic
+perception objective, is removed, the model exhibits decreased performance across all dynamic perception tasks. These
+results demonstrate the effectiveness of our designed multi-tier dynamic enhancement modules in improving dynamic
+perception capabilities. However, when the multi-modal alignment module is removed, we observe an interesting
+phenomenon: the model shows some performance improvement across most of the dynamic perception tasks, while
+exhibiting a noticeable decline on Object Bench, which focuses more on object-level static semantic features. This is
+because multi-modal alignment inherently emphasizes static tactile features, bringing together different possible actions
+on the same object, which can somewhat compromise the model’s fine-grained dynamic perception capabilities. This
+essentially reflects a trade-off between perceiving static tactile object properties and dynamic tactile features, as both
+are crucial for general tactile perception. We further investigate the contribution of the ToucHD dataset and its subsets
+to the dynamic perception capabilities. When we remove the ToucHD (Sim) subset which contains a large number of
+atomic tactile actions, the model’s performance on the two slip tasks decreases. This indicates that this Tier 3 dataset
+does primarily supports the perception of structured dynamic tactile deformations. When the ToucHD (Mani) subset is
+removed, the model also shows a consistent performance drop. However, since this subset primarily supports dynamic
+perception in the real-world manipulation tasks corresponding to Tier 2, the magnitude of the decrease is relatively
+small. In contrast, when the ToucHD (Force) subset is removed, the model loses data support for perceiving Tier 1
+dynamic physical properties, resulting in a performance d
+
+=== page 11 ===
+6
+Conclusion
+In this work, we advance dynamic tactile perception by introducing the tactile dynamic pyramid as a systematic paradigm
+to guide both data collection and model design for hierarchical tactile perception capabilities. From the data perspective,
+the proposed ToucHD dataset serves as the final missing piece, completing a comprehensive dynamic tactile data
+ecosystem that supports multiple tiers of perception. From the model perspective, our AnyTouch 2 general representation
+learning framework integrates multi-level objectives across all tiers, endowing it with comprehensive dynamic tactile
+perception capabilities. We believe this work establishes a solid foundation for general tactile perception and will push
+tactile intelligence into the new era of dynamic perception.
+7
+Acknowledgements
+This work was supported by Beijing Natural Science Foundation (4262050) and by fund for building world-class
+universities (disciplines) of Renmin University of China. It was also supported by the Open Foundation of the State Key
+Laboratory of Precision Space-time Information Sensing Technology No.STSL2025-B-07-01 (C). We would like to
+extend our special thanks to Daimon Robotics and Prof. Huanbo Sun for their support with tactile sensing devices. We
+would also like to thank Denghang Huang, Mingxin Wang, Shaoxuan Xie, Boyue Zhang, and Yuhao Sun for their help
+with 3D component design and data collection.
+11
+
+
+=== page 12 ===
+References
+[1] L. Heng, H. Geng, K. Zhang, P. Abbeel, and J. Malik, “Vitacformer: Learning cross-modal representation for visuo-tactile
+dexterous manipulation,” arXiv preprint arXiv:2506.15953, 2025.
+[2] R. Feng, D. Hu, W. Ma, and X. Li, “Play to the score: Stage-guided dynamic multi-sensory fusion for robotic manipulation,” in
+Conference on Robot Learning.
+PMLR, 2025, pp. 340–363.
+[3] H. Xue, J. Ren, W. Chen, G. Zhang, Y. Fang, G. Gu, H. Xu, and C. Lu, “Reactive diffusion policy: Slow-fast visual-tactile
+policy learning for contact-rich manipulation,” arXiv preprint arXiv:2503.02881, 2025.
+[4] M. Iskandar, A. Albu-Schäffer, and A. Dietrich, “Intrinsic sense of touch for intuitive physical human-robot interaction,” Science
+Robotics, vol. 9, no. 93, p. eadn4008, 2024.
+[5] M. Lambeta, T. Wu, A. Sengul, V. R. Most, N. Black, K. Sawyer, R. Mercado, H. Qi, A. Sohn, B. Taylor et al., “Digitizing
+touch with an artificial multimodal fingertip,” arXiv preprint arXiv:2411.02479, 2024.
+[6] J. Zhao, N. Kuppuswamy, S. Feng, B. Burchfiel, and E. Adelson, “Polytouch: A robust multi-modal tactile sensor for contact-rich
+manipulation using tactile-diffusion policies,” arXiv preprint arXiv:2504.19341, 2025.
+[7] F. Yang, C. Ma, J. Zhang, J. Zhu, W. Yuan, and A. Owens, “Touch and go: Learning from human-collected vision and touch,”
+Advances in Neural Information Processing Systems, vol. 35, pp. 8081–8103, 2022.
+[8] L. Fu, G. Datta, H. Huang, W. C.-H. Panitch, J. Drake, J. Ortiz, M. Mukadam, M. Lambeta, R. Calandra, and K. Goldberg, “A
+touch, vision, and language dataset for multimodal alignment,” in Forty-first International Conference on Machine Learning,
+2024. [Online]. Available: https://openreview.net/forum?id=tFEOOH9eH0
+[9] S. Suresh, Z. Si, S. Anderson, M. Kaess, and M. Mukadam, “Midastouch: Monte-carlo inference over distributions across
+sliding touch,” in Conference on Robot Learning.
+PMLR, 2023, pp. 319–331.
+[10] C. Higuera, A. Sharma, C. K. Bodduluri, T. Fan, P. Lancaster, M. Kalakrishnan, M. Kaess, B. Boots, M. Lambeta, T. Wu et al.,
+“Sparsh: Self-supervised touch representations for vision-based tactile sensing,” in Conference on Robot Learning.
+PMLR,
+2025, pp. 885–915.
+[11] R. Feng, J. Hu, W. Xia, A. Shen, Y. Sun, B. Fang, D. Hu et al., “Anytouch: Learning unified static-dynamic representation
+across multiple visuo-tactile sensors,” in The Thirteenth International Conference on Learning Representations, 2025.
+[12] A.-H. Shahidzadeh, G. M. Caddeo, K. Alapati, L. Natale, C. Fermüler, and Y. Aloimonos, “Feelanyforce: Estimating contact
+force feedback from tactile sensation for vision-based tactile sensors,” in 2025 IEEE International Conference on Robotics and
+Automation (ICRA).
+IEEE, 2025, pp. 251–257.
+[13] K. He, X. Chen, S. Xie, Y. Li, P. Dollár, and R. Girshick, “Masked autoencoders are scalable vision learners,” in Proceedings of
+the IEEE/CVF conference on computer vision and pattern recognition, 2022, pp. 16 000–16 009.
+[14] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark et al., “Learning
+transferable visual models from natural language supervision,” in International conference on machine learning.
+PMLR, 2021,
+pp. 8748–8763.
+[15] Q. K. Luu, P. Zhou, Z. Xu, Z. Zhang, Q. Qiu, and Y. She, “Manifeel: Benchmarking and understanding visuotactile manipulation
+policy learning,” arXiv preprint arXiv:2505.18472, 2025.
+[16] Z. Wu, T. Wang, C. Guan, Z. Jia, S. Liang, H. Song, D. Qu, D. Wang, Z. Wang, N. Cao et al., “Fast-umi: A scalable and
+hardware-independent universal manipulation interface,” arXiv e-prints, pp. arXiv–2409, 2024.
+[17] W. Yuan, Y. Mo, S. Wang, and E. H. Adelson, “Active clothing material perception using tactile sensing and deep learning,” in
+2018 IEEE International Conference on Robotics and Automation (ICRA).
+IEEE, 2018, pp. 4842–4849.
+[18] Y. Li, J.-Y. Zhu, R. Tedrake, and A. Torralba, “Connecting touch and vision via cross-modal prediction,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2019, pp. 10 609–10 618.
+[19] R. Gao, Y. Dou, H. Li, T. Agarwal, J. Bohg, Y. Li, L. Fei-Fei, and J. Wu, “The objectfolder benchmark: Multisensory learning
+with neural and real objects,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2023,
+pp. 17 276–17 286.
+[20] S. Yu, K. Lin, A. Xiao, J. Duan, and H. Soh, “Octopi: Object property reasoning with large tactile-language models,” in
+Robotics:
+

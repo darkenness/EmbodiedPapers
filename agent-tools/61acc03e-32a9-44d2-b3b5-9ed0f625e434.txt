@@ -1,0 +1,841 @@
+=== page 1 ===
+Published as a conference paper at ICLR 2025
+ANYTOUCH: LEARNING UNIFIED STATIC-DYNAMIC
+REPRESENTATION ACROSS MULTIPLE VISUO-TACTILE
+SENSORS
+Ruoxuan Feng1
+Jiangyu Hu2,3
+Wenke Xia1
+Tianci Gao1
+Ao Shen1
+Yuhao Sun3
+Bin Fang3∗
+Di Hu1∗
+1Renmin University of China
+2Wuhan University of Science and Technology
+3Beijing University of Posts and Telecommunications
+ABSTRACT
+Visuo-tactile sensors aim to emulate human tactile perception, enabling robots to
+precisely understand and manipulate objects. Over time, numerous meticulously
+designed visuo-tactile sensors have been integrated into robotic systems, aiding
+in completing various tasks. However, the distinct data characteristics of these
+low-standardized visuo-tactile sensors hinder the establishment of a powerful tac-
+tile perception system. We consider that the key to addressing this issue lies in
+learning unified multi-sensor representations, thereby integrating the sensors and
+promoting tactile knowledge transfer between them. To achieve unified represen-
+tation of this nature, we introduce TacQuad, an aligned multi-modal multi-sensor
+tactile dataset from four different visuo-tactile sensors, which enables the explicit
+integration of various sensors. Recognizing that humans perceive the physical en-
+vironment by acquiring diverse tactile information such as texture and pressure
+changes, we further propose to learn unified multi-sensor representations from
+both static and dynamic perspectives. By integrating tactile images and videos, we
+present AnyTouch, a unified static-dynamic multi-sensor representation learning
+framework with a multi-level structure, aimed at both enhancing comprehensive
+perceptual abilities and enabling effective cross-sensor transfer. This multi-level
+architecture captures pixel-level details from tactile data via masked modeling and
+enhances perception and transferability by learning semantic-level sensor-agnostic
+features through multi-modal alignment and cross-sensor matching. We provide a
+comprehensive analysis of multi-sensor transferability, and validate our method on
+various offline datasets and in the real-world pouring task. Experimental results
+show that our method outperforms existing methods, exhibits outstanding static
+and dynamic perception capabilities across various sensors. The code, TacQuad
+dataset and AnyTouch model are fully available at gewu-lab.github.io/AnyTouch/.
+1
+INTRODUCTION
+Tactile perception is an important sense through which humans perceive the physical world. For
+many years, researchers have been working to endow robots with human-like tactile perception
+abilities through diverse tactile sensors (Liu et al., 2022; Maiolino et al., 2013; Yuan et al., 2017).
+Among them, with high resolution comparable to human touch, various types of visuo-tactile sen-
+sors have garnered widespread attention (Yuan et al., 2017; Donlon et al., 2018; Lambeta et al.,
+2020). Many studies have attempted to use robots equipped with visuo-tactile sensors to perform
+manipulation tasks such as grasping (Xu et al., 2024) and inserting (Li et al., 2014).
+However, due to the low standardization of visuo-tactile sensors, different sensors may exhibit dis-
+crepancies in perceiving the same tactile information. This variability poses challenges to building
+precise robotic tactile systems, as sensor-specific data collection (Yang et al., 2022; Gao et al.,
+2023) and model training limit the data scale and diversity for the model of a single sensor and lead
+to suboptimal perception capabilities. To address this issue, some initial efforts have explored us-
+*Equal corresponding authors.
+1
+arXiv:2502.12191v3  [cs.LG]  1 Apr 2025
+
+
+=== page 2 ===
+Published as a conference paper at ICLR 2025
+ing multi-sensor data collaboratively to enhance cross-sensor knowledge transferability (Yang et al.,
+2024; Zhao et al., 2024). Nevertheless, the lack of aligned multi-sensor data has hindered these at-
+tempts from effectively integrating disparate sensors and constructing a unified representation space.
+Considering this data issue, Rodriguez et al. (2024) collected a dual-sensor paired dataset to enable
+cross-sensor generation. However, their focus on specific manipulation tasks limited the variety
+of sensors and collected objects. Moreover, they overlooked the potential benefits of paired multi-
+modal data for enhancing sensor transferability and achieving comprehensive tactile perception.
+To enhance support for multi-sensor integration, we collect TacQuad, an aligned multi-modal multi-
+sensor tactile dataset containing 72,606 contact frames, using four different visuo-tactile sensors.
+We select these representative sensors from publicly available sensors, self-made sensors, and force
+field sensors to ensure diversity. To balance the trade-off between the cost of data collection and the
+accuracy of pairing, we collect fine-grained spatio-temporal aligned data on a calibration platform,
+while larger-scale coarse-grained spatial aligned data is acquired through the handheld collection, as
+shown in Figure 1. Additionally, we capture the objects being touched using a camera and annotate
+tactile attribute descriptions for each collection, forming a comprehensive touch-vision-language
+dataset. This dataset utilizes paired multi-modal data as a bridge to mitigate the impact of sensor
+variability on the understanding of tactile semantic features, and enables the explicit integration of
+sensors into a unified multi-sensor space for effective knowledge transfer between sensors.
+Building on this solid foundation, we further revisit the challenge of learning unified multi-sensor
+representations: How can we obtain unified multi-sensor representations adaptable to a wide array
+of tasks? We recognize that the human tactile perception is a combination of static and dynamic
+processes, as humans derive comprehensive tactile perception from multiple types of information
+such as texture, sliding, and pressure changes. Drawing on this insight, we propose learning unified
+representations from both static and dynamic perspectives to accommodate a range of tasks.
+To obtain multi-sensor representations of this nature, we introduce AnyTouch, a unified static-
+dynamic multi-sensor tactile representation learning framework. This framework integrates the input
+forms of tactile images and videos, collectively utilizing them to reinforce the model’s abilities to
+perceive both static properties and dynamic changes. Moreover, we design a multi-level architecture
+to comprehensively strengthen the model’s capabilities for capturing pixel-level tactile details and
+semantic-level sensor-agnostic features. Specifically, we utilize masked modeling (He et al., 2022;
+Tong et al., 2022) to maximize the use of multi-sensor data for learning fine-grained, pixel-level
+details. Subsequently, we conduct multi-modal aligning and a novel cross-sensor matching task to
+understand semantic-level tactile properties of objects across different sensors and extract sensor-
+agnostic features. We aim for the multi-sensor representations to share a common space and cluster
+by the tactile information of the object they represent, thereby reducing the gap between sensors.
+To further promote knowledge transfer across multiple sensors, we propose randomly replacing the
+sensor-specific tokens (Yang et al., 2024) with universal sensor tokens during training. This strategy
+ensures the model maintains its ability to process and perceive tactile data across various sensors,
+while also providing knowledge from all seen sensors for generalization to unseen sensors.
+We conduct both quantitative and qualitative experiments to analyze the transferability of multi-
+sensor data and assess the impact of our framework on the multi-sensor representation space. Build-
+ing on this, we comprehensively evaluate the static and dynamic tactile perception capa
+
+=== page 3 ===
+Published as a conference paper at ICLR 2025
+DIGIT
+GelSight Mini
+DuraGel
+Tac3D
+The tactile sensor touches the top center of a rough hard orange. The contact point is relatively
+hard and firm with roughness and a slightly elastic feel .
+Coarse-grained Spatial Aligned
+Fine-grained,Spatio-temporal,Aligned
+Tac3D
+The tactile sensor touches the top center of a glass jar, which has a hard, smooth, and 
+transparent surface with a series of texture.
+DIGIT
+DuraGel
+TacQuad: Aligned Multi-Modal Multi-Sensor Tactile Dataset
+25 Objects
+30 Touches
+17,524 Frames
+(Indoor + Outdoor)
+99 Objects
+151 Touches
+55,082 Frames
+Four Visuo-tactile Sensors
+GelSight Mini
+(Public)
+DIGIT
+(Public)
+DuraGel
+(Self-made)
+Tac3D
+(Force Field)
+Sponge
+Porcelain
+Wool
+Fiber
+Feather
+Metal
+Rusted
+Rustless
+Plastic
+Hard
+Soft
+Food
+Vegetables
+Fruits
+Others
+Plant
+Bark
+Stem
+Leaf
+Stone
+Glass
+Rubber
+Hard
+Soft
+Paper
+Material Distribution
+Data Collection
+Four 
+Sensors
+Handheld
+Calibration Platform
+GelSight Mini
+Figure 1: TacQuad: an aligned multi-modal multi-sensor tactile dataset from four visuo-tactile
+sensors. We select GelSight Mini (Inc.) and DIGIT (Lambeta et al., 2020) from publicly available
+sensors, DuraGel (Zhang et al., 2024) from self-made sensors, and Tac3D (Zhang et al., 2022)
+from force field sensors for diversity. There is a noticeable gap between the data from these sensors.
+We use the four sensors to touch the same position on the same object to obtain aligned data. To
+maximize aligned data collection, we use two methods to gather subsets with different alignment
+accuracy. We collect fine-grained spatio-temporal aligned data on a calibration platform, while
+larger-scale coarse-grained spatial aligned data is acquired through handheld collection.
+source image generation. Similarly, to integrate multi-source tactile data from different sensors,
+techniques such as multi-sensor joint training (Zhao et al., 2024; Higuera et al., 2024; Gupta et al.,
+2025), multi-modal alignment (Yang et al., 2024), and cross-sensor generation (Rodriguez et al.,
+2024) have emerged. However, these methods overlook the benefits of jointly utilizing multi-modal
+data and aligned multi-sensor data to bridge the sensor gap. In this work, we collect an aligned
+multi-modal multi-sensor dataset and propose learning unified multi-sensor representations.
+Visuo-tactile Perception. Visuo-tactile sensors have garnered widespread attention due to their high
+resolution (Yuan et al., 2017; Donlon et al., 2018; Lambeta et al., 2020; Zhang et al., 2024; 2025).
+Nowadays, many works utilize visuo-tactile sensors to capture contact deformations, enabling the
+completion of dexterous manipulation such as dense packing (Li et al., 2022), grasping (Xu et al.,
+2024), and insertion (Li et al., 2014). Visuo-tactile sensors can also collaborate with other sensors
+to assist the robot in performing more complex manipulation tasks. For instance, Feng et al. (2024)
+dynamically integrates visuo-tactile signals with visual and audio data to collaboratively accomplish
+fine-grained manipulation tasks, such as pouring and peg insertion with keyway. In addition to these
+tasks requiring dynamic tactile perception, visuo-tactile sensors are also used in static tasks such as
+material classification (Yang et al., 2022) and shape reconstruction (Gao et al., 2022b). However, due
+to the low standardization of visual-tactile sensors, these methods fail to leverage larger and more
+diverse data from other sensors and lack sensor transferability. In this work, we propose learning a
+unified multi-sensor representation from both static and dynamic perspectives.
+Representation Learning. Representation learning has achieved remarkable success in improving
+model generalization in various fields. Techniques like BERT (Devlin, 2018) and masked autoen-
+coder (MAE) (He et al., 2022) have enhanced the model’s performance across various downstream
+applications. With the rise of multi-modal learning, representation learning has expanded its impact
+across fields. Vision-language pre-training (Radford et al., 2021) has seen tremendous success, and
+more modalities, including audio (Guzhov et al., 2022), touch (Yang et al., 2024), and 3D point
+clou
+
+=== page 4 ===
+Published as a conference paper at ICLR 2025
+3
+ALIGNED MULTI-MODAL MULTI-SENSOR TACTILE DATASET
+The low standardization of visuo-tactile sensors and the gap between multi-sensor data have resulted
+in insufficient data for individual sensors and the poor cross-sensor transferability of tactile models.
+Rodriguez et al. (2024) has made an initial attempt to address it by collecting a dataset with 32,256
+pairs of tactile images from two sensors with a limited variety of objects for specific manipula-
+tion tasks. It does not consider tactile properties such as material and hardness, and overlooks the
+potential to enhance cross-sensor transfer capabilities through multi-modal information.
+In this work, we present a more comprehensive solution to this problem by providing multi-sensor
+aligned data with text and images, explicitly enabling the model to learn semantic-level tactile at-
+tributes and sensor-agnostic features to form a unified multi-sensor representation space through
+data-driven approaches. We collect TacQuad, an aligned multi-modal multi-sensor tactile dataset
+with a greater variety of objects, larger data volume, and more types of sensors. To ensure sensor
+diversity, we select GelSight Mini (Inc.) and DIGIT (Lambeta et al., 2020) from publicly available
+sensors, DuraGel (Zhang et al., 2024) from self-made sensors, and Tac3D (Zhang et al., 2022) from
+force field sensors for data collection. The first three sensors are used to collect tactile images, while
+the Tac3D is used to capture deformation force fields. However, considering collecting fine-grained
+aligned tactile data is very costly, to collect data on a larger scale while ensuring as much data pairing
+as possible, we use both coarse and fine methods to collect aligned data:
+Fine-grained spatio-temporal aligned data. We fix the four sensors side by side in a rectangular
+container and connect them to the movable end of a calibration platform. We use a program to
+control the four sensors to press the same position on the same object in sequence, sharing the same
+speed and depth. Consequently, we obtain a set of continuous spatio-temporally aligned contact
+frames. Due to the high requirement of precision, the process is time-consuming, thus we try our
+best to collect 30 sets of aligned data across 25 objects. This portion of the data contains a total
+of 17,524 contact frames, which can be used for fine-grained tasks such as cross-sensor generation.
+See more details for the fine-grained data collection in Sec. A.5 of the Appendix.
+Coarse-grained spatial aligned data. We collect data in a handheld manner by sequentially press-
+ing the same location on the same object with four sensors. While pressing, we introduce some
+twisting motions to the handheld sensors to better simulate the authentic dynamic touch experience
+of humans. This method allows us to obtain a larger amount of aligned data in a short time. Using
+this approach, we collect 151 sets of aligned data from 99 objects, including both indoor and outdoor
+scenes. This portion of the data contains a total of 55,082 contact frames.
+Each tactile frame in the dataset has a paired visual image and tactile attribute descriptions that
+generated using GPT-4o and manually corrected. We aim to bridge the gap between sensors and
+achieve a more comprehensive tactile perception by aligning with the multi-modal data. As a result,
+we obtain an aligned multi-sensor multi-modal tactile dataset, as shown in Figure 1.
+4
+METHOD
+In this section, we introduce AnyTouch, a unified multi-sensor tactile representation learning frame-
+work from the perspectives of both static and dynamic perception, as shown in Figure 2. Concretely,
+we integrate the input format of tactile images and videos (Sec. 4.1) and focus on learning both fine-
+grained pixel-level details for refined tasks (Sec. 4.2) and semantic-level sensor-agnostic features for
+understanding properties (Sec. 4.3) and building unified space (Sec. 4.4) by a multi-level structure.
+We also propose universal sensor tokens for better knowledge transfer.
+4.1
+UNIFIED INPUT FORMAT FOR STATIC AND DYNAMIC TACTILE PERCEPTION
+In daily life, human tactile perception includes both static an
+
+=== page 5 ===
+Published as a conference paper at ICLR 2025
+Touch
+Encoder
+Static
+Tactile Image
+Dynamic
+Tactile Video
+Masked
+Tactile Image
+Touch
+Decoder
+Static
+Tactile Image
+Dynamic
+Tactile Video
+(Positive / Negative Samples)
+Touch
+Encoder
+(or 
+)
+Image 
+Reconstruction
+Video Reconstruction
+&
+Next Frame
+Prediction
+Multi-Modal
+Contrastive Learning
+Vision
+Encoder
+Text
+Encoder
+“The tactile sensor 
+is touching two
+iron nails. The
+nails are hard ...”
+Task
+Head
+Cross-Sensor Matching
+Does the two samples come from
+the same position of the object?
+0/1
+(Anchor)
+Masked
+Tactile Video
+Masked Modeling: Pixel-Level Details
+Multi-Modal Aligning: Semantic-Level Properties
+Cross-Sensor Matching: Sensor-Agnostic Features
+
+
+Stage 1: Pixel-Level
+Stage 2: Semantic-Level
+Touch
+Encoder
+(Shared)
+(Shared)
+Specific
+Sensor Token
+Universal
+Sensor Token
+…
+Replace
+(Probability =
+)
+Specific Sensor Token
+Universal Sensor Token
+Class Token
+Masked Token
+LoRA Fine-Tuning
+Legends
+Training 
+Step
+Replacing
+Probability
+Universal Sensor Token
+(Linear Increase)
+(or
+)
+(or
+)
+Figure 2: Overview of AnyTouch. Our framework integrates static tactile images and dynamic tac-
+tile videos, aiming to learn a unified multi-sensor representation suitable for various tasks. Through
+a multi-level architecture, we employ masked modeling to learn pixel-level tactile details, and use
+multi-modal aligning and cross-sensor matching to understand semantic-level sensor-agnostic tac-
+tile properties. We also use universal sensor tokens to integrate and transfer sensor information.
+to represent both I and V as Girdhar et al. (2022; 2023), where F is the number of frames and
+H, W denote the shape of images. We then process XT ∈RF ×H×W ×3 into spatio-temporal tokens
+z ∈RN×d through a shared patch projection layer, where N is the length of tokens and d represents
+the feature dimension. By unifying the processing of images and videos in this manner, our approach
+integrates tactile images and video input, enhancing the model’s ability to comprehend both static
+and dynamic information, and endows the model with the potential to accomplish various tasks.
+4.2
+MASKED MODELING: LEARNING PIXEL-LEVEL DETAILS
+Visuo-tactile images are fine-grained data with pixel-level details of subtle tactile deformations and
+continuous changes during dynamic processes, especially for refined perception tasks. To enhance
+the fine-grained perception capabilities of the tactile representation model, we employ the masked
+autoencoder technique (He et al., 2022; Tong et al., 2022), compelling the model to capture pixel-
+level details across multiple sensors. Concretely, we randomly mask the tokens of both tactile images
+and videos with a masking ratio ρ, and build a decoder to obtain the reconstructed static images ˆI
+and dynamic videos ˆV . The corresponding loss function LS
+rec and LD
+rec are mean squared error
+(MSE) loss between the original masked tokens and reconstructed ones in the pixel space:
+LS
+rec =
+1
+|ΩM|
+X
+p∈ΩM
+|ˆI(p) −I(p)|2, LD
+rec =
+1
+F|ΩM|
+F
+X
+f
+X
+p∈ΩM
+| ˆVf(p) −Vf(p)|2,
+(1)
+where p is the token index, ΩM is the set of masked tokens and Vf is the f-th frame in the video V .
+We use masked modeling to learn fine-grained tactile deformation features at the pixel level, as well
+as the temporal dynamics of tactile changes.
+To further enhance the model’s understanding of continuous deformation changes, we introduce an
+additional task of predicting the next frame VF +1 while reconstructing the dynamic video V . The
+loss function LD
+pred is MSE loss between the original frame VF +1 and the predicted frame ˆVF +1:
+LD
+pred = 1
+N
+N
+X
+p
+| ˆVF +1(p) −VF +1(p)|2.
+(2)
+4.3
+MULTI-MODAL ALIGNING: UNDERSTANDING SEMANTIC-LEVEL PROPERTIES
+After obtaining tactile representations with fine-grained perceptual details via masked modeling,
+we aim to further understand semantic-level tactile properties and use paired multi-modal data as
+a bridge to narrow the gap between sensors. Therefore, we propose using multi-modal aligning,
+which binds data from various sensors with paired modalities for a more comprehensive semantic-
+level perception and reduce perceptual differences between sensors. However, differences in data
+collection scenarios across 
+
+=== page 6 ===
+Published as a conference paper at ICLR 2025
+Vision
+(Single Dataset)
+Touch
+(Single Sensor)
+Touch-Vision-Language
+Contrastive Learning
+Vision
+(Single Dataset)
+Touch
+(Single Sensor)
+UniTouch
+Vision
+(Multi-Datasets)
+Touch
+(Multi-Sensors)
+Ours
+Vision
+(Multi-Datasets)
+Touch
+(Multi-Sensors)
+Text
+Text
+Touch-Vision
+Contrastive Learning
+Object 3
+Object 2
+Object 1
+Figure 3: Comparison with existing multi-modal aligning methods. Our method not only uses
+multi-modal data to bridge the gap between sensors, but also explicitly clusters representations of
+the same position on the same object from different sensors together.
+alignment less effective in bridging sensor gaps. Therefore, we select the text modality, which
+consistently describes tactile attributes across datasets, as an anchor to align touch, vision, and text
+modalities. Since tri-modal tactile datasets are rare, with most containing only vision-touch pairs, we
+explore two strategies: automatically expanding the amount of text modality pairings and designing
+aligning methods that are compatible with missing modalities. We first select representative datasets
+for each sensor and then use GPT-4o to generate or expand the text modality within these datasets.
+Through this method, we create new text pairs for 1.4 million samples across the four datasets.
+Based on these extensive tactile datasets, we develop a modality-missing-aware touch-vision-
+language contrastive learning method to leverage the paired data between touch and other modalities
+for alignment. We maximize the use of paired data by selecting the largest subset for each modality
+combination within the batch for multi-modal aligning. Considering a pair of uni-modal represen-
+tations (xT , xV , xL) derived from uni-modal encoders, where xT ∈Rd is the touch representation,
+xV ∈Rd ∪∅is the vision representation and xL ∈Rd ∪∅is the text representation. We then
+perform multi-modal alignment (Radford et al., 2021) within the batch as (taking vision-language
+aligning with missing modalities as an example):
+LV →L = −
+1
+|ΩV ∩ΩL|
+X
+i∈ΩV ∩ΩL
+log
+exp(x⊤
+V,i · xL,i/τ)
+P
+j∈Ωv∩ΩL exp(x⊤
+V,i · xL,j/τ),
+(3)
+where B is the batchsize, ΩV , ΩL are sets of indices for the samples containing vision and text, and τ
+is the scalar temperature. The computation of similar LT →V and LT →L is shown in Sec. A.2 of the
+Appendix. This approach maximizes the use of paired data with missing modalities by aligning the
+sample intersections between modalities. The computation of LV →T , LL→T and LL→V is similar
+but in the opposite direction. We then obtain the joint aligning loss as:
+Lalign = αT V
+2
+(LT →V + LV →T ) + αT L
+2 (LT →L + LL→T ) + αV L
+2
+(LV →L + LL→V ),
+(4)
+where αT V , αT L and αV L are hyper-parameters to control the alignment strength.
+4.4
+CROSS-SENSOR MATCHING: EXTRACTING SENSOR-AGNOSTIC FEATURES
+To fully utilize multi-sensor aligned data and build unified space by clustering multi-sensor tactile
+representations of the same object, we introduce a novel cross-sensor matching task. In this task, the
+model needs to determine whether two tactile images or videos are collected from the same position
+on the same object. We aim to cluster representations of the same tactile information from different
+sensors while performing multi-modal aligning, thereby enhancing the learning of sensor-agnostic
+features and forming a unified multi-sensor representation space, as shown in Figure 3.
+We treat data collected from the same object and position by two different sensors as a positive pair,
+and data from different objects or positions as a negative pair. The model is trained to distinguish
+between positive and negative pairs. For each image and video sample XT in our TacQuad, we
+randomly select one sample from the same object at the same location captured by another sensor as
+the positive sample X+
+T , and choose another sample from any dataset of any other object or location
+as a negative sample X−
+T . We element-wisely multiply the touch representation xT with x+
+T and x−
+T ,
+and then input each result into an MLP to compute the matching scores m+ and m−:
+m+ = MLP(xT · x+
+T ), m−= MLP(xT · x−
+T ),
+(5)
+where xT , x+
+T and x−
+T are the representations o
+
+=== page 7 ===
+Published as a conference paper at ICLR 2025
+This task requires the model to distinguish features with the same semantics from different sensors,
+thus explicitly clustering representations with the same object information form a unified multi-
+sensor representation space. As shown in Figure 3, AnyTouch, incorporating this task, differs from
+existing multi-modal aligning efforts. The construction of this unified multi-sensor representation
+space can explicitly reduce the gap between sensors and aid in generalizing to unseen sensors.
+As both this task and multi-modal aligning focus on semantic-level features, we combine them as
+the second stage, with masked modeling as the first stage. This multi-level training approach allows
+us to develop unified multi-sensor representations adaptable to tasks of varying granularities.
+4.5
+UNIVERSAL SENSOR TOKEN
+In addition to building a multi-sensor representation space, we aim to extract and store information
+related to each sensor to aid the understanding of input data. More importantly, we want to integrate
+and effectively transfer this information when generalizing to new sensors. Using sensor-specific
+tokens is a method for extracting sensor-specific information, but this approach cannot fully transfer
+information from all seen sensors when generalizing to new sensors (Yang et al., 2024).
+Therefore, we propose using universal sensor tokens to integrate and store information related to
+various sensors, thereby maximizing the utilization of multi-sensor data when generalizing to new
+sensors. During training, we randomly replace the sensor-specific tokens with the universal sensor
+tokens, expecting them to aid in understanding input data from various sensors. Specifically, we
+introduce a set of learnable sensor tokens {sk}K
+k=1 ∪su, where K is the number of sensor types,
+sk ∈RL×d are the sensor-specific tokens for the k-th sensor, su ∈RL×d are universal sensor tokens
+and L is the number of sensor tokens for each sensor. When inputting the tactile token sequence z
+from the k-th sensor into the encoder Φenc to obtain its representation xT , we randomly select one
+from sk and su to concatenate with z, as follows:
+s = i · su + (1 −i) · sk, i ∼B(pu),
+xT = Φenc(z, s),
+(7)
+where pu is the probability of using universal sensor tokens su. During inference, we consistently
+use universal sensor tokens for data from new sensors.
+4.6
+TRAINING PARADIGM
+Our framework has a multi-level structure, with the training of two stages conducted sequentially.
+In the first stage, we simultaneously perform the reconstruction of static tactile images and dynamic
+tactile videos, as well as the unique next frame prediction task for tactile videos. The loss for the
+first stage Lstage1 is as follows:
+Lstage1 = LS
+rec + LD
+rec + LD
+pred.
+(8)
+In the second stage, we continue to use both tactile images and videos, and simultaneously perform
+multi-modal aligning and cross-sensor matching tasks. Hence, the loss function for the second stage
+is the sum of the losses from these two tasks:
+Lstage2 = Lalign + λLmatch,
+(9)
+where λ is a hyper-parameter controlling the weight of cross-sensor matching task.
+5
+EXPERIMENTS
+In this section, we explore the answers to the following questions through quantitative and qualitative
+experiments: (Q1) How much benefit does the data of each sensor provide when it is integrated?
+(Q2) What does the unified multi-sensor representation space constructed by AnyTouch look like?
+(Q3) Is the unified multi-sensor representation more advantageous in various static and dynamic
+perception tasks? We analyze Q1 in Section 5.2, expolore Q2 in Section 5.3, and answer Q3 through
+comparisons with existing methods in Sections 5.4, 5.5 and 5.6.
+5.1
+DATASET AND BASELINES
+We use 9 different tactile datasets for training, including: Touch and Go (TAG) (Yang et al., 2022),
+VisGel (Li et al., 2019), Cloth (Yuan et al., 2018), ObjectFolder Real (OF Real) (Gao et al., 2023) ,
+7
+
+
+=== page 8 ===
+Published as a conference paper at ICLR 2025
+Table 1: The impact of adding data from multiple sensors on the seen dataset (TAG), the unseen
+dataset from seen sensors (Feel), and the unseen dataset from unseen sensors (OF 1.0 and OF 2.0).
+Tactile Training Data
+Data
+TAG
+Feel
+OF 1.0
+OF 2.0
+Volume
+Material
+Grasp
+Material
+Material
+No Tactile Pre-training (CLIP)
+/
+52.96
+72.37
+41.00
+73.16
+TAG, VisGel, Cloth
+996k
+83.55 (↑30.59) 79.12 (↑6.75) 46.12 (↑5.12) 75.10 (↑1.94)
+TAG, VisGel, Cloth, OF Real
+2161k
+79.67 (↓3.88) 79.28 (↑0.16) 47.55 (↑1.43) 75.53 (↑0.43)
+TAG, VisGel, Cloth, OF Real,
+2388k
+79.61 (↓0.06) 79.10 (↓0.18) 48.00 (↑0.45) 75.57 (↑0.04)
+TVL, SSVTP, YCB-Slide
+TAG, VisGel, Cloth, OF Real,
+2427k
+79.70 (↑0.09) 79.40 (↑0.30) 48.75 (↑0.75) 75.66 (↑0.09)
+TVL, SSVTP, YCB-Slide, Octopi
+CLIP
+AnyTouch
+(MAE Only)
+AnyTouch
+(MAE + Align)
+AnyTouch
+(MAE + Align + Match)
+GelSight Mini
+DIGIT
+DuraGel
+Figure 4: The impact of components in AnyTouch on the multi-sensor representation space.
+We use t-SNE to visualize the representations on the unused fine-grained subset of TacQuad, starting
+with CLIP and sequentially incorporating the modules. Each color represents a single touch, and
+samples from three sensors that touch the same position are connected by dashed lines.
+TVL (Fu et al., 2024), YCB-Slide (Suresh et al., 2023) and SSVTP (Kerr et al., 2022), Octopi (Yu
+et al., 2024) and the coarse-grained subset of our TacQuad. We leverage the continual frames avail-
+able in these datasets for dynamic perception. We also select four datasets: TAG, Feel (Calandra
+et al., 2017), ObjectFolder 1.0 (Gao et al., 2022a), ObjectFolder 2.0 (Gao et al., 2022b) as the
+downstream datasets. We compare AnyTouch with several single-sensor models: VIT-LENS-2 (Lei
+et al., 2024), TLV-Link (Cheng et al., 2024), and Omnibind (Lyu et al., 2024). We also compare
+our method with the multi-sensor model UniTouch (Yang et al., 2024). We use the largest subset
+of all data that meets the requirements of UniTouch and TLV-Link to train them, remarked as Uni-
+Touch† and TLV-Link†. For the real-world dynamic perception task, we compare our method with a
+multi-sensor model T3 (Zhao et al., 2024), which is trained on 3M data, more than AnyTouch. The
+detailed dataset and baseline introduction are provided in Appendix A.1, A.3 and A.4.
+5.2
+SENSOR TRANSFERABILITY ANALYSIS (Q1)
+Since we have integrated data from multiple sensors into unified representations, we aim to inves-
+tigate the contributes of the knowledge transferred from each sensor’s data to downstream tasks.
+Therefore, we incorporate data from GelSight, GelSlim (Donlon et al., 2018), DIGIT and GelSight
+Mini into the training of AnyTouch to obtain four different models, and compare them across four
+downstream tasks. As shown in Table 1, training with only GelSight data significantly improves
+performance on downstream datasets for all sensors, compared to the CLIP model which has not
+encountered any tactile data. This indicates that tactile representation pre-training is crucial and
+transferable across new sensors. After sequentially integrating data from GelSlim, DIGIT, and Gel-
+Sight Mini into the training, we observe performance improvements across the three unseen datasets,
+with greater enhancements for unseen sensors than seen sensors. This suggests that the knowledge
+from the data of GelSlim, DIGIT, and GelSight Mini can transfer to the GelSight and other sensors.
+However, we also observe two interesting phenomena: (1) In the material classification task of the
+seen dataset TAG, the model trained solely on GelSight data performs the best, while incorporating
+data from more sensors leads to a performance drop. This is because TAG is included in the pre-
+training data and integrating more data reduces the proportion of TAG data in pre-training. This
+aligns with the CLIP paper’s finding that greater overlap between the downstream task dataset and
+the pre-training dataset may improve performance. (2) Although the integrated data volume from
+8
+
+
+=== page 9 ===
+Published as a conference paper at ICLR 2025
+Table 2: Evaluation of static perception capabilities on the seen sensor (GelSight). *Note that
+Feel is seen for the corresponding UniTouch and AnyTouch models. ‡Note that original TLV-Link
+uses frames after grasping which are much easier in Feel, whereas other models use frames during
+grasping. AnyTouch achieves a result of 99.0 using frames after grasping.
+Method
+Tactile Training Data
+Touch and Go
+Feel
+Material
+Roughness
+Hardness
+Grasp
+CLIP
+/
+52.96
+84.09
+88.34
+72.37
+VIT-LENS-2
+TAG
+63.0
+85.1
+92.0
+-
+TLV-Link
+Touch100k
+67.2
+84.7
+91.3
+94.5‡
+OmniBind
+TAG
+67.45
+-
+-
+-
+UniTouch
+TAG, Feel*, YCB, OF 2.0
+61.3
+-
+-
+82.3
+TLV-Link†
+TAG, TVL, SSVTP, OF Real, TacQuad
+74.12
+85.94
+94.18
+76.97
+AnyTouch
+TAG, Feel*, YCB, OF 2.0
+82.74
+86.01
+94.24
+87.17
+AnyTouch
+TAG, VisGel, Cloth, TVL, SSVTP,
+80.82
+86.74
+94.68
+80.53
+YCB-Slide, OF Real , Octopi, TacQuad
+DIGIT is larger, the benefits are less compared to incorporating data from GelSight Mini. This may
+suggest that the images from DIGIT differ more from the images of GelSight and other sensors than
+the images from GelSight Mini do due to the hardware difference.
+5.3
+MULTI-SENSOR REPRESENTATION SPACE (Q2)
+To verify whether AnyTouch clusters the representations with the same tactile information from
+different sensors together as expected, we use t-SNE (Van der Maaten & Hinton, 2008) to visualize
+the tactile representations. We extract one aligned contact frame from each sensor for the 30 touches
+in the unused fine-grained subset of TacQuad. We input these samples into the CLIP model and the
+AnyTouch model which gradually incorporates masked modeling, multi-modal aligning, and cross-
+sensor matching, and visualize their representations in Figure 4. Due to the lack of exposure to tactile
+images, CLIP struggles to distinguish the same tactile information from different sensors, instead
+clustering samples by sensor. After introducing masked modeling, the representations become more
+centralized within each sensor, as this method focuses on pixel-level tactile features, which are
+sensor-dependent. However, this is not ideal for cross-sensor generalization, as we want multi-sensor
+tactile representations to cluster based on the object’s tactile information they represent, minimizing
+sensor gaps. After incorporating multi-modal aligning, the multi-sensor tactile representations begin
+to blend and cluster by the objects they represent. This indicates that cross-sensor generalization is
+beginning to emerge, but there is still a distinct tendency for sensor-specific clustering. With our
+cross-sensor matching task, the representations from different sensors fully mix in a shared multi-
+sensor space, clearly clustering by the object’s tactile information. This indicates that our model
+possesses the ability to extract sensor-agnostic features, enabling generalization to unseen sensors.
+5.4
+STATIC PERCEPTION ON SEEN SENSORS (Q3)
+To validate the benefit of unified multi-sensor representations in transferring knowledge from multi-
+ple sensor data to seen sensors, we compared it to baselines on the seen dataset TAG and the unseen
+dataset Feel from the GelSight sensor. Since UniTouch uses different training data, we also train an
+AnyTouch model with the same data as UniTouch to ensure a fair comparison. As shown in Table 2,
+the TLV-Link† trained with multi-sensor data outperforms all single-sensor models and the original
+TLV-Link in all three tasks of TAG. The AnyTouch trained with the same data as UniTouch, outper-
+forms UniTouch in all four tasks. With the integration of dynamic perception and more multi-sensor
+data, AnyTouch trained on all data achieved the best results in hardness and roughness classifica-
+tion in TAG and comparable results to UniTouch in Feel, despite UniTouch having seen this data.
+These demonstrate the static perception capabilities of our framework on seen sensors. Notably,
+the original TLV-Link uses frames after grasping, while other models use frames during grasping.
+AnyTouch achieves a result of 99.0 using frames after grasping. It is worth mentioning that the Any-
+Touch trained with less data outperforms the one trained with all data in TAG mat
+
+=== page 10 ===
+Published as a conference paper at ICLR 2025
+Table 3: Evaluation of static perception capabilities on unseen sensors (TACTO and Taxim) using
+linear probing. *Note that OF 2.0 is seen for the corresponding UniTouch and AnyTouch models.
+Method
+Tactile Training Data
+ObjectFolder 1.0
+ObjectFolder 2.0
+Material
+Material
+CLIP
+/
+41.00
+73.16
+UniTouch
+TAG, Feel, YCB-Slide, OF 2.0*
+41.3
+85.4
+UniTouch†
+TAG, VisGel, TVL
+47.25
+75.29
+SSVTP, OF Real , TacQuad
+AnyTouch
+TAG, Feel, YCB-Slide, OF 2.0*
+46.50
+85.87
+AnyTouch
+TAG, VisGel, Cloth, TVL, SSVTP,
+49.62
+76.02
+YCB-Slide, OF Real , Octopi, TacQuad
+Table 4: Evaluation on the real-world pouring task
+using GelSight Mini.
+Method
+Dynamic
+Mean Error (g) ↓
+Perception
+Fine-tune
+Freeze
+CLIP
+✘
+5.22
+49.1
+T3
+✘
+2.33
+9.74
+AnyTouch
+✘
+2.45
+9.60
+AnyTouch
+✔
+1.56
+8.22
+Figure 5: Setup of real-world pouring task.
+are much simpler, and the tactile text descriptions in other datasets also include these two binary
+attributes, which have less impact on the data distribution.
+5.5
+STATIC PERCEPTION ON UNSEEN SENSORS (Q3)
+To verify the generalization of our method on unseen sensors, we compare it with the multi-sensor
+models UniTouch and UniTouch† on two datasets from unseen sensors, OF 1.0 and OF 2.0. As
+shown in Table 3, the AnyTouch trained on the same data as Unitouch outperforms it on both
+datasets, demonstrating the static perception capability of our method across different sensors. Both
+UniTouch and AnyTouch, perform better on the unseen OF 1.0 dataset, confirming that integrating
+multi-sensor data aids generalization to unseen sensors. In addition, the AnyTouch trained on the
+full dataset achieves the highest performance on the unseen OF 1.0, demonstrating that learning
+sensor-agnostic semantic-level tactile features and constructing unified multi-sensor representation
+space is an effective approach for cross-sensor transfer.
+5.6
+REAL WORLD DYNAMIC PERCEPTION (Q3)
+To test the dynamic perception capability of our method in real-world object manipulation tasks, we
+conduct experiments on a real-world task: fine-grained pouring, as shown in Figure 5. The detailed
+task setup is located at A.8. We compare AnyTouch with a recent multi-sensor model T3 and use a
+static-only AnyTouch model trained solely on tactile images as a baseline. Neither model includes
+modules specifically designed for dynamic perception. We conduct 10 real-world test runs and
+record the error between the poured mass and the target mass for each test. We then average the error
+across the test runs to get the ”mean error” and use it as the metric, as shown in Table 4. When the
+tactile encoder is frozen and only the policy network is fine-tuned, CLIP, which has not seen tactile
+images, struggles with the task, highlighting the challenges of fine-grained dynamic perception. In
+contrast, the static-only AnyTouch performed comparably to T3 which was trained on more data.
+After integrating dynamic perception capabilities, AnyTouch achieved the best performance. This
+demonstrates the importance of learning unified multi-sensor representations from both static and
+dynamic perspectives for completing various tasks including real-world tasks.
+6
+CONCLUSION
+In this paper, we collect TacQuad, an aligned multi-modal multi-sensor tactile dataset that enables
+the explicit integration of various sensors. Based on this, we present AnyTouch, a unified multi-
+sensor tactile representation learning framework from the perspectives of both static and dynamic
+perception. We also explore the multi-sensor representation space and sensor transferability.
+10
+
+

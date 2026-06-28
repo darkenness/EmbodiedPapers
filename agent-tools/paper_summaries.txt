@@ -1,0 +1,250 @@
+=== @abad2020visuotactile-review ===
+T: Visuotactile Sensors With Emphasis on GelSight Sensor: A Review
+topics: visuotactile sensing, tactile sensing, GelSight, haptics, robotics, computer vision, review
+1: 这篇综述把 visuotactile sensors（视觉-触觉传感器）的历史脉络从 pedobarograph（足底压力光学记录仪）梳理到 GelSight，并重点说明 GelSight 的 hardware / software / application 演化。
+
+=== @agarwal2025pbr-design ===
+T: Vision-based tactile sensor design using physically based rendering
+topics: tactile sensing, vision-based tactile sensor, physically based rendering, optical simulation, sensor design, photometric stereo, RGB2Normal, robotics
+1: PBR Design 把 VBTS 的光学结构设计从 trial-and-error（反复试错）转成 simulation-driven design（仿真驱动设计）：用 physically based rendering（基于物理的渲染）模拟照明、形状、厚度和涂层材料，再用 RGB2Normal 一类目标函数评价哪个设计更适合恢复 surface normals（表面法线）。
+
+=== @allshire2026abc ===
+T: Scalable Behavior Cloning with Open Data, Training, and Evaluation
+topics: behavior cloning, bimanual manipulation, teleoperation dataset, diffusion transformer, vision-language-action, flow matching, sim-to-real evaluation, DAgger
+1: 行为克隆（Behavior Cloning）整条栈——硬件、数据采集、训练配方、仿真评测与真机评估——长期被闭源数据和工业实验室不透明流程卡住；ABC 开源双臂遥操作数据集 ABC-130K、可负担硬件、ABC-DiT / ABC-VLA 训练与 ABC-Sim / ABC-Eval 全套基础设施，让社区能在统一基准上比较 DiT 与 VLA 架构、算力与数据规模选择。
+
+=== @azulay2024allsight ===
+T: AllSight: A Low-Cost and High-Resolution Round Tactile Sensor with Zero-Shot Learning Capability
+topics: tactile sensing, vision-based tactile sensor, AllSight, round tactile sensor, zero-shot learning, transfer learning, force estimation, torsion estimation
+1: AllSight 是一个 low-cost, high-resolution, round optical tactile sensor（低成本、高分辨率、圆形光学触觉传感器），重点不是单个传感器的最高精度，而是 3D printed（3D 打印）、large contact surface（大接触面）、full contact state（完整接触状态）估计和 zero-shot transfer（零样本迁移）能力。
+
+=== @chen2026mvwam ===
+T: MV-WAM: Manifold-Aware World Action Model with Value Augmentation
+topics: world action model, manifold-aware optimization, value augmentation, mixture-of-transformers, flow matching, visual generalization, out-of-distribution robustness, progress-value regulation
+1: 现有 WAM 在域内很强，但 OOD 视觉泛化收益难传导到动作鲁棒性——根因是视觉与动作处于异构流形，联合优化让高曲率视觉目标主导梯度、动作表征在分布偏移下更脆弱。MV-WAM 用 MoT 统一建模视频预测、动作生成与 value 估计，配合流形感知多目标优化、跨模态因果 mask 与 progress-value 回滚，在 RoboTwin random 达 55.7%（+29.3 pt）且真机双臂 77.5%。
+
+=== @chi2023diffusionpolicy ===
+T: Diffusion Policy: Visuomotor Policy Learning via Action Diffusion
+topics: diffusion policy, action diffusion, visuomotor policy learning, action head backbone, imitation learning, behavior cloning, receding horizon control, denoising diffusion
+1: 传统 BC（含 ACT、BeT、IBC）在多模态演示、高维动作与训练稳定性上常吃亏；能否把机器人 **visuomotor policy（视觉运动策略）** 直接建模为 **条件去噪扩散过程（conditional denoising diffusion process）**，在推理时通过 score 梯度 + Langevin 动力学迭代采样动作序列？**Diffusion Policy** 在 4 套 benchmark、12 项任
+
+=== @chung2026tactilegenesis ===
+T: Tactile Genesis: Exploring Tactile Sensors at Scale for Learning Dexterous Tasks
+topics: tactile simulation, tactile sensing, dexterous manipulation, vision-based tactile sensor, teacher-student policy, reinforcement learning, sim-to-real, tactile abstraction
+1: 灵巧操作需要触觉，但硬件各异、实验室难以在同一手型与任务上公平对比“该用哪种触觉抽象”；Tactile Genesis 在 Genesis World 上统一仿真 binary contact、depth、per-taxel force/torque、elastomer marker、proximity、contact audio 与 voxelized temperature，GPU 并行 >20k env / 1000+ taxel
+
+=== @do2022densetact ===
+T: DenseTact: Optical Tactile Sensor for Dense Shape Reconstruction
+topics: tactile sensing, vision-based tactile sensor, dense shape reconstruction, 3D calibration, hemispherical sensor, in-hand manipulation, robotics
+1: Dexterous manipulation（灵巧操作）需要高分辨率触觉几何，但很多 optical tactile sensors（光学触觉传感器）要么表面形状偏平面、要么光学结构和标定复杂；DenseTact 试图用半球形软弹性体、鱼眼相机和学习模型做 dense 3D surface reconstruction（稠密三维表面重建）。
+
+=== @do2023densetact-2 ===
+T: DenseTact 2.0: Optical Tactile Sensor for Shape and Force Reconstruction
+topics: tactile sensing, vision-based tactile sensor, 3D shape reconstruction, 6D force estimation, optical tactile sensor, transfer learning, robotics
+1: DenseTact 1.0 证明了半球形 optical tactile sensor 可以做稠密 3D shape reconstruction；DenseTact 2.0 进一步把硬件做小、做模块化，并把同一类内部图像用于 calibrated shape reconstruction（标定形状重建）和 6-axis wrench estimation（六维力/力矩估计）。
+
+=== @dong2017improved-gelsight ===
+T: Improved GelSight Tactile Sensor for Measuring Geometry and Slip
+topics: tactile sensing, vision-based tactile sensor, GelSight, photometric stereo, Lambertian membrane, slip detection, geometry reconstruction, robotics
+1: 这篇论文改进 Fingertip GelSight：用 Lambertian membrane（朗伯反射膜）和新的 illumination system（照明系统）提高 surface normal（表面法线）测量精度，同时利用 marker 与 texture 的相对运动做 translational / rotational slip detection（平移/旋转滑移检测）。
+
+=== @donlon2018gelslim ===
+T: GelSlim: A High-Resolution, Compact, Robust, and Calibrated Tactile-sensing Finger
+topics: tactile sensing, vision-based tactile sensor, GelSight, GelSlim, compact robot finger, optical path, calibration, durability
+1: GelSlim 把 GelSight-style high-resolution tactile imaging（高分辨率触觉成像）压缩成适合夹爪的 slim finger（细长手指），同时强调 robust materials（耐用材料）、fabric skin（织物皮肤）和 calibration（标定维护），使传感器能承受真实抓取中的持续磨损。
+
+=== @fan2025crystaltac ===
+T: CrystalTac: Vision-Based Tactile Sensor Family Fabricated via Rapid Monolithic Manufacturing
+topics: tactile sensing, vision-based tactile sensor, CrystalTac, monolithic manufacturing, multimaterial 3D printing, sensor fabrication, design flexibility, robotics
+1: CrystalTac 关注 VBTS 的 fabrication consistency（制造一致性）和 design-to-creation gap（从设计到制造的鸿沟）：用 rapid monolithic manufacturing（快速一体化制造）一次性打印不同机制的视觉触觉传感器族，而不是把 base、lens、elastomer、marker、coating 等零件分开加工和组装。
+
+=== @feng2025anytouch ===
+T: AnyTouch: Learning Unified Static-Dynamic Representation across Multiple Visuo-tactile Sensors
+topics: visuo-tactile sensor, tactile representation learning, multi-sensor transfer, static-dynamic perception, TacQuad, cross-sensor matching, masked autoencoding, vision-language alignment
+1: 各类 VBTS 数据形态差异大、缺乏对齐多传感器数据，单传感器预训练难以形成可迁移的触觉表征。本文发布 TacQuad（GelSight Mini / DIGIT / DuraGel / Tac3D 四传感器对齐触视语数据），并提出 AnyTouch：统一静态图像与动态视频输入，经 MAE 学像素级细节、多模态对齐与 cross-sensor matching 学 sensor-agnostic 语义，实现跨传感器静态属性识别与真机细粒
+
+=== @feng2026anytouch2 ===
+T: AnyTouch 2: General Optical Tactile Representation Learning For Dynamic Tactile Perception
+topics: visuo-tactile sensor, tactile representation learning, dynamic tactile perception, ToucHD, force prediction, tactile dynamic pyramid, video masked autoencoder, cross-sensor matching
+1: 现有触觉数据与预训练模型多停在静态物体属性（Tier 4–5），缺少对接触时序形变与力动力学的系统支持。本文提出 Tactile Dynamic Pyramid + ToucHD（242 万帧，Sim 原子动作 / Mani 真机操作 / Force 触力配对），并在此基础上构建 AnyTouch 2：视频 MAE + 帧差重建、语义对齐与 cross-sensor matching、力/Δ力预测，统一物体级理解与力感知动态触觉。
+
+=== @guo2026fafm ===
+T: Frequency-Aware Flow Matching for Continuous and Consistent Robotic Action Generation
+topics: flow matching, vision-language-action, continuous action generation, discrete cosine transform, action chunking, heterogeneous control frequency, temporal consistency, Sobolev regularization
+1: Flow-matching / diffusion 策略普遍输出离散 action chunk，在混合控制频率数据上会发生 identifiability failure（同一物理轨迹因采样频率不同变成不同监督），推理时相邻时刻动作还可能方向冲突导致 jitter；FAFM 用 DCT 频域 flow matching + 一阶时间导数正则，在不增加网络参数的前提下生成连续、时序一致的动作，并可接到独立 FM 策略与 VLA。
+
+=== @jing2026learning ===
+T: Learning Action Priors for Cross-embodiment Robot Manipulation
+topics: vision-language-action, action prior, cross-embodiment, flow matching, robot manipulation, latent distillation, history compression, LIBERO
+1: 标准 VLA 从 VLM 继承强视觉-语言先验，但 action head 几乎从零学物理运动，跨 embodiment 时还要同时学动作分布与跨模态对齐。本文提出两阶段框架：Stage 1 仅用无条件的跨 embodiment 动作轨迹，通过 flow-matching encoder-decoder 学 motion prior；Stage 2 再接入 VLM，经 decoder 复用、早期 latent distillation 
+
+=== @kim2026serf ===
+T: SERF: Spatiotemporal Environment and Robot Feature Map for Long-Horizon Mobile Manipulation
+topics: mobile manipulation, long-horizon manipulation, vision-language-action, spatiotemporal feature map, neural points, robot memory, scene representation, BEHAVIOR-1K
+1: 长时程移动操作不能只靠当前相机图像判断“我在哪里、环境变了什么、任务做到哪一步”；SERF 把环境和机器人本体都表示成同一 latent space 中可随时间更新的 neural points，再把多参考系、多尺度 map tokens 接入 VLA，让策略获得显式的空间记忆和机器人-环境关系。
+
+=== @kota2026-3dcal ===
+T: 3D Cal: An Open-Source Software Library for Calibrating Tactile Sensors
+topics: tactile sensing, tactile sensor calibration, vision-based tactile sensor, depth reconstruction, open-source software, robot manipulation
+1: 3D Cal 把低成本 FDM 3D printer（熔融沉积 3D 打印机）改造成自动 probing device（探针设备），用来为 DIGIT、GelSight Mini 等 tactile sensors 采集带坐标标签的校准数据，并训练 TouchNet 把视觉触觉图像转换成 depth maps。
+
+=== @kuzucu2026parcel ===
+T: PARCEL: Pool-Anchored Resampling with Conditioned Elastic Queries for Efficient Vision-Language Unde
+topics: large vision-language models, visual token compression, elastic inference, efficient multimodal models, visual tokenization, spatial grounding, matryoshka models, query resampling
+1: LVLM 把图像/视频映射成大量 visual tokens，导致 language decoder prefill、self-attention 和 KV-cache 成本随 token 数上升；PARCEL 试图训练一个可以在 16/64/256 等不同 visual-token budgets 下运行的模型，同时避免 M3 式 spatial pooling 丢细节和 MQT 式 query resampling 丢空间 grou
+
+=== @li2025r-tac0 ===
+T: R-Tac0: A Rounded High-Frequency Transferable Monochrome Vision-based Tactile Sensor for Shape Recon
+topics: tactile sensing, vision-based tactile sensor, rounded tactile sensor, monochrome tactile sensing, darkness mapping, shape reconstruction, transfer learning, slip detection
+1: 圆弧形 vision-based tactile sensor（视觉触觉传感器）更适合机械手指尖接触，但现有 RGB 多通道方案通常只有 30-60 Hz，且换一个新传感器就要重新标定；R-Tac0 用单通道黑白相机、白光照明和复合圆弧弹性体，把曲面触觉重建推到 120 Hz，并尝试让深度模型跨传感器迁移。
+
+=== @li2025vbts-classification-review ===
+T: Classification of Vision-Based Tactile Sensors: A Review
+topics: vision-based tactile sensor, tactile sensing, optical tactile sensor, sensor classification, robot touch, robotics, review
+1: 这篇 review 认为旧的 marker / reflection 等分类方式已经不足以覆盖当代 vision-based tactile sensors，因此按 contact 到 tactile image 的 transduction principle（换能/转导原则）重建了一套分类：Marker-Based Transduction 与 Intensity-Based Transduction 两大类，再细分为 SMB、MM
+
+=== @li2026wallwm ===
+T: WALL-WM: Carving World Action Modeling at the Event Joints
+topics: world action model, event-grounded pretraining, vision-language-action, video-action alignment, semantic events, variable-length action chunks, staircase decoding, world model
+1: 固定长度 action chunk 把语言（事件/目标）、视觉（连续场景动力学）与控制（毫秒级接触）硬塞进同一预测窗，造成粒度错配，VLA/WAM 训练退化成短视距相关拟合。WALL-WM 以 **action-grounded semantic event** 为原子学习单元，做 event-grounded WAM 预训练 + 事件级数据生态，同一骨干支持 event 模式（可变长执行段）与 unified 模式（Staircase
+
+=== @lin2022dtact ===
+T: DTact: A Vision-Based Tactile Sensor that Measures High-Resolution 3D Geometry Directly from Darknes
+topics: tactile sensing, vision-based tactile sensor, 3D shape reconstruction, robotics
+1: GelSight 类 vision-based tactile sensor（视觉触觉传感器）依赖严格的内部照明和 photometric stereo（光度立体），制造与扩展到 non-planar surface（非平面表面）都很麻烦；DTact 尝试用半透明弹性体“受压变暗”的现象，直接从灰度变化估计 3D geometry（3D 几何）。
+
+=== @lin20239dtact ===
+T: 9DTact: A Compact Vision-Based Tactile Sensor for Accurate 3D Shape Reconstruction and Generalizable
+topics: tactile sensing, vision-based tactile sensor, 3D shape reconstruction, 6D force estimation, robotics
+1: 9DTact 试图把 DTact 的 low-cost vision-based tactile sensing（低成本视觉触觉感知）推进到更紧凑、更易制造的硬件，同时保留 3D shape reconstruction（3D 形状重建）并加入不依赖 marker/pattern 的 6D force estimation（六维力估计）。
+
+=== @lin2026la4vla ===
+T: LA4VLA: Learning to Act without Seeing via Language-Action Pretraining
+topics: vision-language-action, language-action pretraining, manipulation skills, atomic action segmentation, LA4-33K, mixed pretraining, visual robustness, MetaWorld
+1: VLA 预训练里稠密 visual-action 监督常会压过稀疏 language-action 信号，使策略依赖视觉捷径而非真正学会“语言如何条件化动作”；LA4VLA 把专家 demonstration 切成原子动作段并配上低层动作描述，构建 **LA4-33K** 语言-动作预训练集，在无视觉输入下学习可复用的 language-conditioned action priors，再与标准 VLA 预训练组合提升仿真与真机表现。
+
+=== @lin2026physbrain ===
+T: PhysBrain: Human Egocentric Data as a Bridge from Vision Language Models to Physical Intelligence
+topics: vision-language-action, embodied brain, egocentric video, physical intelligence, first-person VLM, flow matching action expert, diffusion action policy, human demonstration
+1: 机器人 VLA 需要第一视角、接触前后、手-物-任务关系和时间顺序等 embodied cues，但大规模机器人数据昂贵且稀缺；PhysBrain 把人类 egocentric videos 转成结构化、可验证的 E2E-3M 具身监督，训练出可迁移到 PhysVLA 的 first-person embodied VLM backbone。
+
+=== @lu2024tacshade ===
+T: TacShade: A New 3D-printed Soft Optical Tactile Sensor Based on Light, Shadow and Greyscale for Shap
+topics: tactile sensing, vision-based tactile sensor, TacShade, TacTip, shape from shading, greyscale tactile image, light and shadow, shape reconstruction
+1: TacShade 想解决稀疏 marker displacement（标记点位移）不适合高分辨率形状重建的问题：它把 TacTip 的内部结构改成可产生 light / shadow / greyscale（光、影、灰度）变化的黑白图案，再用改进的 shape from shading（明暗恢复形状）从单张触觉图像做粗但快速的 2.5D/3D 形状重建。
+
+=== @niu2026trex ===
+T: T-Rex: Tactile-Reactive Dexterous Manipulation
+topics: tactile-reactive manipulation, vision-language-action, dexterous manipulation, mixture-of-transformers, tactile VQ-VAE, contact-rich dataset, motor primitives, human egocentric pre-training
+1: 现有 VLA 多忽视触觉或只用静态触觉编码，难以做插入钥匙、翻页、挤牙膏等需要毫秒级力反馈的 contact-rich dexterity；T-Rex 用 100 小时 motor-primitive 触觉遥操作数据 + variable-rate MoT（约 5 Hz 视觉动作规划 + 约 20 Hz 触觉精炼）和 temporal tactile VQ-VAE，在 12 项真实灵巧任务上比最强基线平均成功率高约 30 个百分点。
+
+=== @physicalintelligence2024pi0 ===
+T: π0: A Vision-Language-Action Flow Model for General Robot Control
+topics: vision-language-action, robot foundation model, flow matching, cross-embodiment learning, PaliGemma, action expert, action chunking, dexterous manipulation
+1: 机器人要走出实验室，需要 generalist robot policy（通用机器人策略）在多种机器人、多种任务上共享预训练；$\pi_0$ 在 PaliGemma VLM 上接 flow-matching action expert，用 10k+ 小时跨 embodiment 数据和 pre-training/post-training 分离，把 Internet-scale 语义理解转成最高 50 Hz 的连续灵巧控制。
+
+=== @physicalintelligence2025pi05 ===
+T: π0.5: a Vision-Language-Action Model with Open-World Generalization
+topics: vision-language-action, open-world generalization, co-training, heterogeneous multimodal data, high-level subtask prediction, mobile manipulation, long-horizon manipulation, web data
+1: $\pi_0$ 证明了跨机器人灵巧控制，但真实家庭里的 open-world generalization（开放世界泛化）还需要把网络语义、高层子任务推理和低层动作放进同一训练配方；$\pi_{0.5}$ 在 $\pi_0$ 上通过 heterogeneous co-training（异构共训练）和 hybrid multimodal examples（混合多模态样本），让 mobile manipulator 能在训练未见过的家里完成
+
+=== @physicalintelligence2026pi07 ===
+T: π0.7: a Steerable Generalist Robotic Foundation Model with Emergent Capabilities
+topics: vision-language-action, robot foundation model, compositional generalization, diverse context conditioning, visual subgoals, episode metadata, cross-embodiment transfer, steerable policy
+1: 先前 VLA 往往要靠 per-task fine-tuning 才能做好灵巧任务，也难像 LLM 那样重组技能；$\pi_{0.7}$ 用 diverse context conditioning（多样上下文条件化）把语言、episode metadata、control modality labels、visual subgoal images 一起放进 prompt，从而吞进演示、次优自主数据、人类视频和 web 数据，并在未见任
+
+=== @processbench2026roboprocessbench ===
+T: RoboProcessBench
+topics: robotic manipulation, vision-language models, visual question answering, process understanding, benchmark, bimanual manipulation, temporal reasoning, contact reasoning
+1: 现有机器人视觉问答常问“这是什么”或“该做什么”，但对 manipulation execution 如何随时间展开评测不足；RoboProcessBench 把 phase、contact、motion、bimanual coordination、primitive progress、temporal order、outcome 和 primitive transitions 拆成 12 类诊断问题，用 57,892 条 QA 评估 
+
+=== @raskar2004non-photorealistic-camera ===
+T: Non-Photorealistic Camera: Depth Edge Detection and Stylized Rendering Using Multi-Flash Imaging
+topics: computational photography, multi-flash imaging, non-photorealistic rendering, depth edge detection, stylized rendering, image-based rendering, computer vision
+1: 这篇论文问的是：如果给普通相机加一圈位置已知的 flashes（闪光灯），能不能不重建完整 3D model（几何模型），只利用投影阴影直接检测真实场景中的 depth edges（深度边缘），再生成更容易理解形状的 NPR / stylized rendering（非真实感渲染）图像。
+
+=== @redkin2024dynamic-illumination ===
+T: Enhance Vision-based Tactile Sensors via Dynamic Illumination and Image Fusion
+topics: tactile sensing, vision-based tactile sensor, dynamic illumination, image fusion, DIGIT, touch processing
+1: 这篇论文问的是：现有 vision-based tactile sensors（视觉触觉传感器）大多在固定的 static illumination（静态照明）下成像，能不能只通过动态改变 RGB LEDs 的照明模式并融合多帧图像，提高 tactile image 的 contrast、sharpness 和 background difference？
+
+=== @shah2026memory ===
+T: Memory Retrieval in Visuomotor Policies for Long-Horizon Robot Control
+topics: visuomotor policy, memory retrieval, long-horizon control, partial observability, imitation learning, vision-language model, video question answering, sparse attention
+1: 家庭等部分可观测场景里，长时程操作要回忆物体位置、事件时刻、计数与人机协作进度，但把长上下文 Transformer 直接用于离线模仿学习会遇到虚假相关与闭环误差累积。HALO 用 VLM 导出的 memory-dependent VQA 监督引导 attention 检索任务相关信息，再用 top-$k$ sparse retrieval 抑制噪声历史，从而从最长约 8 分钟经验中稳定取回多样记忆并执行动作。
+
+=== @shi2026flowdpg ===
+T: FlowDPG: Deterministic Policy Gradient on Flow Matching Policies for Real-World Manipulation
+topics: flow matching, deterministic policy gradient, reinforcement learning, offline-to-online RL, real-world manipulation, actor-critic, IQL, vision-language-action
+1: Flow matching 策略要把 critic 的 $\nabla_a Q$ 反传进 actor，必须沿多步 denoising ODE 做 BPTT，成本高且数值脆弱，导致表达力强的 flow policy 与 value-driven RL 难以稳定结合。FlowDPG 在训练时把 DDPG 式 critic gradient 蒸馏进 velocity field：演示驱动速度保可行，critic 修正导向更高价值，推理仍为标准
+
+=== @tang2026frs ===
+T: Improving Robotic Generalist Policies via Flow Reversal Steering
+topics: robotic generalist policies, vision-language-action, flow matching, policy steering, diffusion steering, reinforcement learning, behavioral cloning, vision-language models
+1: 通用机器人策略已经学到很多“合理动作”先验，但在新任务上直接按语言命令采样常会失败；FRS 用人或 VLM 给出的粗粒度方向动作反向穿过 flow policy，找到对应噪声，再让原 VLA 正向去噪，把粗动作投影成更像通用策略分布内的精细机器人动作。
+
+=== @tencent2026hy-embodied-05 ===
+T: HY-Embodied-0.5: Embodied Foundation Models for Real-World Agents
+topics: embodied foundation models, vision-language-action, vision-language models, embodied reasoning, spatial reasoning, mixture-of-transformers, visual latent tokens, reinforcement learning
+1: 通用 VLM 有开放世界知识，但缺少机器人所需的 fine-grained visual perception、spatial-temporal perception 和 embodied reasoning；HY-Embodied-0.5 把 MoT 架构、visual latent tokens、超过 100M 具身/空间/感知样本、多阶段 SFT/RL/RFT 和 large-to-small on-policy distilla
+
+=== @wang2021gelsight-wedge ===
+T: GelSight Wedge: Measuring High-Resolution 3D Contact Geometry with a Compact Robot Finger
+topics: tactile sensing, vision-based tactile sensor, GelSight, photometric stereo, 3D contact geometry, compact robot finger, pose tracking, robotics
+1: 传统 GelSight 能高分辨率恢复 3D contact geometry（3D 接触几何），但硬件太厚、太大，不适合作为 robot finger（机器人手指）；GelSight Wedge 试图在楔形紧凑结构里保留 photometric stereo（光度立体）所需的定向彩色光照与高分辨率 3D 重建能力。
+
+=== @wang2024large-scale-vbts ===
+T: Large-scale Deployment of Vision-based Tactile Sensors on Multi-fingered Grippers
+topics: tactile sensing, vision-based tactile sensor, large-scale tactile sensing, multi-fingered gripper, GelSight, sensor synchronization, modular tactile sensor, zero-shot calibration
+1: Vision-based tactile sensors（视觉触觉传感器）通常只装在机械手指尖，但真实抓取和操作需要手指、指节和掌心上的多点接触；这篇论文提出一套可大规模部署的 VBTS 系统，用同步采集硬件、紧凑模块化传感器和 zero-shot calibration（零样本/少标定迁移）把 7 个 VBTS 同时集成到三指 GelGripper 上。
+
+=== @wang2026covla ===
+T: Co-VLA: Coordination-Aware Structured Action Modeling for Dual-Arm Vision-Language-Action Systems
+topics: vision-language-action, dual-arm manipulation, bimanual coordination, structured action modeling, shared-residual decomposition, latent-aware controller, pi0, RoboTwin
+1: 双臂 VLA 往往把左右臂动作拼成单一向量端到端回归，协作意图与执行细节混在一起，紧耦合任务上隐式协调不够稳定；Co-VLA 在 $\pi_0$ 骨干上把 action head 换成 Structured Action Expert（SAE），把共享协调意图与左右臂 residual 执行拆开，并用 Latent-Aware Controller（LAC）在部署时解释这些 latent 来调节同步、不对称和平滑性。
+
+=== @wang2026policytrim ===
+T: PolicyTrim: Boosting Intrinsic Policy Efficiency of Vision-Language-Action Models
+topics: vision-language-action, policy efficiency, action chunking, reinforcement learning, GRPO, post-training, deployment efficiency, step reduction
+1: VLA 真实部署的总耗时由“每次推理延迟 × 推理次数”共同决定；现有工作几乎只优化 compute-centric efficiency（单步推理更快），却忽视 intrinsic policy efficiency（每次能可靠执行多长的 action chunk、完成任务需要多少物理步）。PolicyTrim 用两阶段 GRPO 后训练，在不改架构、不加示教的前提下延长可信 chunk 长度并削减冗余物理步，实现最高 5.83× 端
+
+=== @xu2026egoguide ===
+T: EgoGuide: Egocentric Guidance for Efficient Robot-Free Demonstration Collection and Learning
+topics: robot-free demonstration, universal manipulation interface, UMI, egocentric vision, data curation, online data coverage guidance, gated residual policy, robot manipulation
+1: UMI 让人可以用手持 gripper surrogate 收集 robot-free demonstrations，但容易反复录到冗余成功轨迹且缺少全局场景视角；EgoGuide 在采集时同步 wrist / head egocentric observations，并用在线 visual-geometric coverage score 在 AR 中引导采集者去录更有信息量的状态，再用 GERP 把 egocentric conte
+
+=== @xu2026univiewvla ===
+T: UniviewVLA: A Unified Multiview Vision-Language-Action Model with World Modeling
+topics: vision-language-action, multiview perception, world modeling, occlusion-aware manipulation, autoregressive VLA, UniVLA, visual token compression, action entropy
+1: 标准 agent-view + wrist-view 在遮挡时丢失动作关键线索，加物理相机要训练-推理相机 parity，显式 3D 重建又贵且只看当前态。UniviewVLA 在 UniVLA 式自回归 VLA 上接世界模型：仅用两路标准相机预测多视角未来场景，再经运动信息 token 压缩与 action-entropy 动态选视角做动作预测，无需额外硬件即可补遮挡与未来演化信息。
+
+=== @yang2026memorywam ===
+T: MemoryWAM: Efficient World Action Modeling with Persistent Memory
+topics: world action model, persistent memory, hybrid memory, gist tokens, anchor frames, non-Markovian manipulation, long-horizon manipulation, video DiT
+1: WAM 需要历史观测做非马尔可夫决策，但滑动窗口会遗忘、全历史 KV cache 又随轨迹长度线性涨延迟和显存；MemoryWAM 用 recent frames + event-boundary anchor frames + gist tokens 的 hybrid memory 和定制 attention，在训练期借 video DiT 学动力学、推理期不做视频生成，于 RMBench 与真实记忆依赖任务上超过强 VLA/WAM 
+
+=== @yang2026transtac ===
+T: TransTac: Visuo-Tactile Modality Transition via Ultraviolet-Encoded Transparent Elastomers
+topics: tactile sensing, vision-based tactile sensor, visuo-tactile sensing, transparent tactile sensor, ultraviolet markers, stereo marker matching, RGB-D fusion, near-contact perception
+1: 传统 coated VBTS（带不透明涂层的视觉触觉传感器）能重建接触形变，但挡住外部视觉；RGB-D 相机能看全局几何，却在近距离和即将接触的区域失效。TransTac 用透明硅胶、UV-reflective markers（紫外反光标记）、双目相机和 prior-guided Delaunay stereo matching（先验引导的 Delaunay 双目匹配）把视觉观察和触觉重建放进同一个紧凑传感器。
+
+=== @ye2026etts ===
+T: E-TTS: A New Embodied Test-Time Scaling Framework for Robotic Manipulation
+topics: vision-language-action, test-time scaling, robotic manipulation, reasoning-action scaling, history-aware verification, closed-loop refinement, vision-language verifier, LIBERO
+1: 现有 embodied test-time scaling（Test-Time Scaling）多只做 action scaling，忽略 reasoning scaling 与历史上下文；E-TTS 以可插拔模块化框架，在推理时联合采样 reasoning-action 候选、用 history buffer 支撑的 vision-language verifier 做 pairwise 评分，并通过 feedback 形成闭环迭代 
+
+=== @yuan2017gelsight ===
+T: GelSight: High-Resolution Robot Tactile Sensors for Estimating Geometry and Force
+topics: tactile sensing, vision-based tactile sensor, GelSight, photometric stereo, 3D geometry reconstruction, force estimation, robotics
+1: GelSight 试图回答机器人触觉到底需要什么信息：不仅是 force（力），还需要由软接触表面提供的 high-resolution geometry（高分辨率几何）、texture（纹理）、slip（滑移）和局部形变。
+
+=== @zhang2026contactworld ===
+T: ContactWorld: What Matters in Vision-Tactile World Models for Contact-Rich Manipulation
+topics: vision-tactile world model, contact-rich manipulation, robot world model, tactile sensing, point cloud, tactile force field, latent world model, model-predictive control
+1: 接触丰富操作中的 world model 既要预测几何关系，又要处理局部接触、摩擦、遮挡和长时程误差累积；ContactWorld 用 12 个 contact-rich manipulation tasks 和 6 类视觉/触觉模态系统比较 representation structure、cross-modal compatibility 与 long-horizon robustness 到底怎样影响 latent world m
+
+=== @zhao2023learning ===
+T: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware
+topics: action chunking, imitation learning, behavior cloning, bimanual manipulation, conditional VAE, transformer policy, teleoperation, ALOHA
+1: 精细双臂操作（穿扎带、插电池、开透明酱料杯等）通常依赖高精度机器人与昂贵传感标定；能否用约 \$20k 的低成本硬件 + 端到端模仿学习，在仅 10 分钟量级演示下达到 80–90% 真机成功率？作者提出 ALOHA 双臂遥操作栈与 **Action Chunking with Transformers（ACT）**，用 action chunk 生成模型缓解 BC 误差累积与非平稳演示问题。
+
