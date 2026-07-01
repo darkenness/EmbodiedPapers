@@ -73,6 +73,32 @@ class Research {
     );
   }
 
+  metadataReview(dv) {
+    const papers = this.paperPages(dv)
+      .where(page => this.needsMetadataReview(page))
+      .sort(page => page.file.mtime, "desc");
+    const rows = papers.array ? papers.array() : Array.from(papers);
+
+    dv.header(2, "元数据待确认");
+    if (rows.length === 0) {
+      dv.paragraph("所有文献笔记都有可用的元数据来源和置信度标记。");
+      return;
+    }
+
+    dv.table(
+      ["Paper", "Source", "Confidence", "DOI", "arXiv", "PDF", "Updated"],
+      rows.map(page => [
+        this.paperTitle(dv, page),
+        page.metadata_source ?? "",
+        page.metadata_confidence ?? "",
+        page.doi ?? "",
+        page.arxiv ?? "",
+        this.formatField(page.pdf),
+        this.date(page.file.mtime),
+      ])
+    );
+  }
+
   paperMapReadingStatus(dv) {
     const content = String(dv.current()?.file?.content ?? "");
     const axes = this.parseQuickIndexAxes(content);
@@ -111,6 +137,7 @@ class Research {
 
     if (pending.length === 0) {
       dv.paragraph("全部文献笔记都已链接精读稿。");
+      this.renderMetadataReviewSummary(dv, rows);
       return;
     }
 
@@ -126,6 +153,8 @@ class Research {
           this.date(page.file.mtime),
         ])
     );
+
+    this.renderMetadataReviewSummary(dv, rows);
   }
 
   paperMapCoverage(dv) {
@@ -371,6 +400,35 @@ class Research {
 
   hasReadingLink(page) {
     return this.hasValue(page.reading);
+  }
+
+  needsMetadataReview(page) {
+    const confidence = String(page.metadata_confidence ?? "").trim().toLowerCase();
+    const source = String(page.metadata_source ?? "").trim().toLowerCase();
+    if (!confidence || !source) return true;
+    return confidence === "low";
+  }
+
+  renderMetadataReviewSummary(dv, rows) {
+    const pending = rows.filter(page => this.needsMetadataReview(page));
+    if (pending.length === 0) {
+      return;
+    }
+
+    dv.header(3, "元数据待确认");
+    dv.paragraph(
+      `${pending.length} 篇文献缺少 \`metadata_source\` / \`metadata_confidence\`，或置信度为 low。`
+    );
+    dv.table(
+      ["Paper", "Source", "Confidence", "DOI", "arXiv"],
+      pending.map(page => [
+        this.paperTitle(dv, page),
+        page.metadata_source ?? "",
+        page.metadata_confidence ?? "",
+        page.doi ?? "",
+        page.arxiv ?? "",
+      ])
+    );
   }
 
   parseQuickIndexAxes(content) {

@@ -15,7 +15,8 @@ module.exports = async function createPaperFromOpenAlex(tp) {
   );
   if (!choice) return "";
 
-  const citeKey = buildCiteKey(choice);
+  const citeKey = await resolveCiteKey(tp, choice);
+  if (!citeKey) return "> 已取消创建文献笔记。";
   await tp.file.rename(citeKey);
 
   const authors = unique((choice.authorships ?? []).map(item => item.author?.display_name).filter(Boolean));
@@ -27,6 +28,8 @@ module.exports = async function createPaperFromOpenAlex(tp) {
   );
   const venue = choice.primary_location?.source?.display_name ?? choice.host_venue?.display_name ?? "";
   const abstract = invertAbstract(choice.abstract_inverted_index);
+  const arxiv = extractArxivId(choice);
+  const metadataConfidence = choice.doi || arxiv ? "high" : "medium";
 
   return `---
 tags:
@@ -37,9 +40,12 @@ aliases:
 year: ${choice.publication_year ?? ""}
 title: ${yamlString(choice.title)}
 doi: ${yamlString(choice.doi)}
+arxiv: ${yamlString(arxiv)}
 url: ${yamlString(choice.id)}
 venue: ${yamlString(venue)}
 openalex: ${yamlString(choice.id)}
+metadata_source: openalex
+metadata_confidence: ${metadataConfidence}
 pdf:
 reading:
 images:
@@ -55,6 +61,7 @@ ${yamlList((choice.topics ?? []).slice(0, 6).map(item => item.display_name))}
 # ${choice.title}
 
 - [ ] PDF:: 
+- [ ] 元数据:: source=openalex, confidence=${metadataConfidence}
 - [ ] 精读稿:: 待整理
 - [ ] 地图维护:: 在 [[论文地图]] 的快速索引中加入本篇，并运行 \`python setting/scripts/check_paper_map.py --sync-reading-markers\`
 - [ ] 阅读状态:: unread
@@ -66,10 +73,10 @@ affiliation:: ${institutions.map(value => `[[${value}]]`).join(", ")}
 
 ${abstract}
 
-## 一句话问题
+## 一句话定位
 
 
-## 方法
+## 方法 / 对象
 
 
 ## 证据
@@ -100,18 +107,92 @@ function formatWorkChoice(work) {
   return `${work.publication_year ?? "-"} | ${work.title} | ${venue} | cites ${work.cited_by_count ?? 0}`;
 }
 
+async function resolveCiteKey(tp, work) {
+  let citeKey = buildCiteKey(work);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const conflict = findCiteKeyFile(tp, citeKey);
+    if (!conflict) return citeKey;
+
+    const manual = await tp.system.prompt(
+      `citekey 已存在：${citeKey}\n冲突文件：${conflict.path ?? conflict.name ?? "unknown"}\n请输入新的 citekey：`,
+      citeKey
+    );
+    if (!manual) return "";
+    citeKey = normalizeCiteKey(manual);
+  }
+  return citeKey;
+}
+
+function findCiteKeyFile(tp, citeKey) {
+  if (tp.file?.find_tfile) {
+    const found = tp.file.find_tfile(citeKey) ?? tp.file.find_tfile(`${citeKey}.md`);
+    if (found) return found;
+  }
+
+  const app = globalThis.app ?? tp.app;
+  const linked = app?.metadataCache?.getFirstLinkpathDest?.(citeKey, "");
+  if (linked) return linked;
+
+  const files = app?.vault?.getMarkdownFiles?.() ?? [];
+  return files.find(file => file.basename === citeKey) ?? null;
+}
+
 function buildCiteKey(work) {
   const firstAuthor = work.authorships?.[0]?.author?.display_name ?? "paper";
-  const family = firstAuthor.trim().split(/\s+/).at(-1)?.toLowerCase() ?? "paper";
+  const family = slugPart(firstAuthor.trim().split(/\s+/).at(-1) ?? "paper") || "paper";
   const year = work.publication_year ?? "yyyy";
-  const titleWord = (work.title ?? "untitled")
+  const titleSlug = buildTitleSlug(work.title ?? "untitled");
+  return normalizeCiteKey(`@${family}${year}${titleSlug}`);
+}
+
+function buildTitleSlug(title) {
+  const words = String(title)
     .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .split(/\s+/)
-    .find(word => !["the", "a", "an", "of", "for", "and", "with", "to", "in", "on"].includes(word))
-    ?? "paper";
-  return `@${family}${year}${titleWord}`.replace(/[\\/:*?"<>|#^[\]]/g, "");
+    .filter(word => word && !TITLE_STOP_WORDS.has(word) && !/^\d+$/.test(word));
+
+  const selected = [];
+  for (const word of words) {
+    if (!selected.includes(word)) selected.push(word);
+    if (selected.length >= 4) break;
+  }
+
+  return selected.join("-") || "paper";
+}
+
+function normalizeCiteKey(value) {
+  let raw = String(value ?? "").trim().replace(/\.md$/i, "");
+  if (!raw.startsWith("@")) raw = `@${raw}`;
+  return raw
+    .toLowerCase()
+    .replace(/[\\/:*?"<>|#^[\]\s]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$|^@-/g, match => match.startsWith("@") ? "@" : "");
+}
+
+function slugPart(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function extractArxivId(work) {
+  const values = [
+    work.ids?.arxiv,
+    work.primary_location?.landing_page_url,
+    work.primary_location?.pdf_url,
+    ...(work.locations ?? []).flatMap(location => [location.landing_page_url, location.pdf_url]),
+  ].filter(Boolean);
+
+  for (const value of values) {
+    const match = String(value).match(/(?:arxiv\.org\/(?:abs|pdf)\/)?(\d{4}\.\d{4,5})(?:v\d+)?/i);
+    if (match) return match[1];
+  }
+  return "";
 }
 
 function invertAbstract(index) {
@@ -140,3 +221,29 @@ function yamlWikiList(values) {
   if (!values || values.length === 0) return "";
   return values.map(value => `  - "[[${String(value).replaceAll('"', '\\"')}]]"`).join("\n");
 }
+
+const TITLE_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "based",
+  "by",
+  "for",
+  "from",
+  "in",
+  "into",
+  "is",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "toward",
+  "towards",
+  "using",
+  "via",
+  "with",
+]);
