@@ -2,6 +2,7 @@
 .omx/
 tmp/
 .trash/
+local-archive/
 
 # OS metadata
 .DS_Store
